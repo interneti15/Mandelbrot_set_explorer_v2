@@ -4,6 +4,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <SFML/Graphics.hpp>
 
+
 using namespace std;
 using namespace boost::multiprecision;
 
@@ -80,6 +81,10 @@ public:
 	void update(const sf::RenderWindow& window)
 	{
 		mousePosition = sf::Mouse::getPosition(window);
+
+		left_button_down = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+		right_button_down = sf::Mouse::isButtonPressed(sf::Mouse::Right);
+		middle_button_down = sf::Mouse::isButtonPressed(sf::Mouse::Middle);
 	}
 };
 
@@ -108,47 +113,6 @@ public:
 	}
 };
 
-inline long long now()
-{
-	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-}
 
-namespace colorHandling
-{
-	tuple<int, int, int> numberToRGB(const int& number, const int& iterations) {
-		if (number == 0)
-		{
-			return std::make_tuple(0, 0, 0); // Black color
-		}
-		else if (number == iterations)
-		{
-			return std::make_tuple(0, 0, 0); // Black color
-		}
-		else
-		{
-			int scaledNumber = (number * 255) / iterations;
-			int red = int((255 - scaledNumber) / 1.3) % 256;
-			int green = (scaledNumber * 7) % 256;
-			int blue = (scaledNumber * 13) % 256;
-			return std::make_tuple(red, green, blue);
-		}
-	}
-}
 
-void updatePixels(int* screen, sf::Uint8* pixels, unsigned int WIDTH, unsigned int HEIGHT, const int& iterations)
-{
-	for (int y = 0; y < HEIGHT; y++)
-	{
-		for (int x = 0; x < WIDTH; x++)
-		{
-			int color = screen[y * WIDTH + x];
-			auto rgb = colorHandling::numberToRGB(color, iterations);
 
-			int pixelIndex = (x + y * WIDTH) * 4;
-			pixels[pixelIndex] = std::get<0>(rgb);
-			pixels[pixelIndex + 1] = std::get<1>(rgb);
-			pixels[pixelIndex + 2] = std::get<2>(rgb);
-			pixels[pixelIndex + 3] = 255;
-		}
-	}
-}

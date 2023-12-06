@@ -18,7 +18,10 @@
     <ClCompile Include="Mandelbrot_set_explorer_v2.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
-    <ClCompile Include="classes.cpp">
+    <ClCompile Include="classes.hpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="functions.hpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
   </ItemGroup>

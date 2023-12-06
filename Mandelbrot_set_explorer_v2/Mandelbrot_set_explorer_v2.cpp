@@ -5,7 +5,8 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include "classes.cpp"
+//#include "classes.hpp"
+#include "functions.hpp"
 
 #include <mutex>
 
@@ -15,7 +16,7 @@ using namespace std;
 
 namespace global
 {
-	constexpr unsigned int WIDTH = 900;
+	constexpr unsigned int WIDTH = 1200;
 	constexpr unsigned int HEIGHT = 900;
 
 	int* screen = new int[WIDTH * HEIGHT];
@@ -27,12 +28,12 @@ namespace global
 
 }
 
-inline void end()
+void end(const int& code = 0)
 {
 	delete[] global::screen;
 	delete[] global::pixels;
 
-	exit(0);
+	exit(code);
 }
 
 int main()
@@ -44,14 +45,9 @@ int main()
 
 	sf::Sprite sprite(texture);
 
-	sf::Font font;
-	font.loadFromFile("arial.ttf");
-
-	sf::Text text("", font, 25);
-	text.setOutlineColor(sf::Color::Black);
-	text.setOutlineThickness(1);
-
 	variables vars;
+
+	load(global::screen, global::WIDTH, global::HEIGHT);
 
 	while (window.isOpen())
 	{
@@ -65,6 +61,14 @@ int main()
 		}
 
 		vars.variables_update(window);
+		if (vars.MouseVars.left_button_down)
+		{
+			paint(global::screen, vars, global::WIDTH, global::HEIGHT);
+		}
+		if (vars.MouseVars.right_button_down)
+		{
+			
+		}
 
 		if (true)
 		{
@@ -77,7 +81,8 @@ int main()
 		}
 
 		window.display();
+
 	}
-	//end();
+	end(1);
 }
 
