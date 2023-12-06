@@ -2,9 +2,13 @@
 #include <iostream>
 
 #include <SFML/Graphics.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include "classes.cpp"
-#include "functions.cpp"
+
+#include <mutex>
+
 
 using namespace boost::multiprecision;
 using namespace std;

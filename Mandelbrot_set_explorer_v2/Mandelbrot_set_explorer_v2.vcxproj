@@ -130,7 +130,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="functions.cpp" />
     <ClCompile Include="classes.cpp" />
     <ClCompile Include="Mandelbrot_set_explorer_v2.cpp" />
   </ItemGroup>
