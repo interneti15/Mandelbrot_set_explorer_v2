@@ -1,15 +1,10 @@
 ﻿#include <thread>
 #include <iostream>
-#include <vector>
 
 #include <SFML/Graphics.hpp>
-#include <mutex>
-#include <cmath>
 
-#include <chrono>
-
-#include <classes.hpp>
-#include <functions.hpp>
+#include "classes.cpp"
+#include "functions.cpp"
 
 using namespace boost::multiprecision;
 using namespace std;
@@ -26,7 +21,6 @@ int main()
 	sf::Font font;
 	font.loadFromFile("arial.ttf");
 
-	//sf::Text text(std::string("Zoom: " + maths + "X"), font, 25);
 	sf::Text text("", font, 25);
 	text.setOutlineColor(sf::Color::Black);
 	text.setOutlineThickness(1);
@@ -46,15 +40,18 @@ int main()
 
 		vars.variables_update(window);
 
+		if (true)
+		{
+			updatePixels(global::screen, global::pixels, global::WIDTH, global::HEIGHT, global::max_iterations);
 
+			texture.update(global::pixels);
 
+			window.clear();
+			window.draw(sprite);
+		}
 
-
-
-
-
-
-
+		window.display();
 	}
+	//end();
 }
 

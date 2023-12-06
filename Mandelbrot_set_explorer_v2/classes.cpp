@@ -1,11 +1,8 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
-#include <mutex>
-
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
-
+#include <SFML/Graphics.hpp>
 
 using namespace std;
 using namespace boost::multiprecision;
@@ -13,12 +10,23 @@ using namespace boost::multiprecision;
 namespace global
 {
 	constexpr unsigned int WIDTH = 900;
-	constexpr int unsigned HEIGHT = 900;
+	constexpr unsigned int HEIGHT = 900;
 
 	int* screen = new int[WIDTH * HEIGHT];
 	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
 
-	mutex screenMutex;
+	int max_iterations = 1000;
+
+	std::mutex screenMutex;
+
+}
+
+inline void end()
+{
+	delete[] global::screen;
+	delete[] global::pixels;
+
+	exit(0);
 }
 
 class point // just a pair of numbers
