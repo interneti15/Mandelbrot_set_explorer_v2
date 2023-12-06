@@ -9,6 +9,28 @@
 using namespace boost::multiprecision;
 using namespace std;
 
+namespace global
+{
+	constexpr unsigned int WIDTH = 900;
+	constexpr unsigned int HEIGHT = 900;
+
+	int* screen = new int[WIDTH * HEIGHT];
+	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
+
+	int max_iterations = 1000;
+
+	std::mutex screenMutex;
+
+}
+
+inline void end()
+{
+	delete[] global::screen;
+	delete[] global::pixels;
+
+	exit(0);
+}
+
 int main()
 {
 	sf::RenderWindow window(sf::VideoMode(global::WIDTH, global::HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);

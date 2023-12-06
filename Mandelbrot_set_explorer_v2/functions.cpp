@@ -15,7 +15,7 @@ inline long long now()
 
 namespace colorHandling
 {
-    std::tuple<int, int, int> numberToRGB(const int& number, const int& iterations) {
+    tuple<int, int, int> numberToRGB(const int& number, const int& iterations) {
         if (number == 0)
         {
             return std::make_tuple(0, 0, 0); // Black color

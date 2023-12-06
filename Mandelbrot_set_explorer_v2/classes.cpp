@@ -7,27 +7,6 @@
 using namespace std;
 using namespace boost::multiprecision;
 
-namespace global
-{
-	constexpr unsigned int WIDTH = 900;
-	constexpr unsigned int HEIGHT = 900;
-
-	int* screen = new int[WIDTH * HEIGHT];
-	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
-
-	int max_iterations = 1000;
-
-	std::mutex screenMutex;
-
-}
-
-inline void end()
-{
-	delete[] global::screen;
-	delete[] global::pixels;
-
-	exit(0);
-}
 
 class point // just a pair of numbers
 {
@@ -55,28 +34,28 @@ public:
 
 	cpp_dec_float_50 step;
 
-	positions() // starting positions dependent on Width and Height
+	positions(unsigned int WIDTH, unsigned int HEIGHT) // starting positions dependent on Width and Height
 	{
-		if (global::WIDTH >= global::HEIGHT)
+		if (WIDTH >= HEIGHT)
 		{
-			step = 4 / (global::HEIGHT - 1);
+			step = 4 / (HEIGHT - 1);
 
 			top_left.y = 2;
-			top_left.x = step * ((global::WIDTH - 1) / 2);
+			top_left.x = step * ((WIDTH - 1) / 2);
 		}
 		else
 		{
-			step = 4 / (global::WIDTH - 1);
+			step = 4 / (WIDTH - 1);
 
 			top_left.x = -2;
-			top_left.y = step * ((global::HEIGHT - 1) / 2);
+			top_left.y = step * ((HEIGHT - 1) / 2);
 		}
 
 		down_left.x = top_left.x;
-		down_left.y = top_left.y - ((global::HEIGHT - 1) * step);
+		down_left.y = top_left.y - ((HEIGHT - 1) * step);
 
 		top_right.y = top_left.y;
-		top_right.x = top_left.x + ((global::WIDTH - 1) * step);
+		top_right.x = top_left.x + ((WIDTH - 1) * step);
 
 		down_right.x = top_right.x;
 		down_right.y = down_left.y;
