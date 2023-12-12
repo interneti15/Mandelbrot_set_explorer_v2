@@ -5,6 +5,7 @@
 #include "classes.hpp"
 
 #include <fstream>
+#include <mutex>
 
 inline long long now()
 {
@@ -20,7 +21,10 @@ inline bool load(int* screen, int width, int height)
 
     string data, temp;
 
-    
+    if (!file.is_open())
+    {
+        return false;
+    }
 
     getline(file, data);
 
@@ -69,7 +73,13 @@ inline void updatePixels(int* screen, sf::Uint8* pixels, unsigned int WIDTH, uns
 	{
 		for (int x = 0; x < WIDTH; x++)
 		{
-			int color = screen[y * WIDTH + x];
+			int color = screen[y * WIDTH + x] - 1;
+
+            if (color < 0)
+            {
+                color = 0;
+            }
+
 			auto rgb = colorHandling::numberToRGB(color, iterations);
 
 			int pixelIndex = (x + y * WIDTH) * 4;
@@ -114,122 +124,66 @@ inline int iteration_check(cpp_dec_float_50 x, cpp_dec_float_50 y, const int& ma
     return max_iterations;
 }
 
-inline void painttest(int* screen, const int& width, const int& height, const positions& cords)
+inline void testt(globals* Global, const positions& cords)
 {
-    cout << cords.top_left.x << endl;
-    cout << cords.top_left.y << endl;
+    cout << "started" << endl;
 
-    for (size_t y = 0; y < height; y++)
+	const int height = Global->HEIGHT;
+    const int width = Global->WIDTH;
+
+	for (size_t y = 0; y < height && !(Global->end); y++)
     {       
-        for (size_t x = 0; x < width; x++)
+        for (size_t x = 0; x < width && !(Global->end); x++)      
         {
+            if (Global->screen[x + width * y] != 0)
+            {
+                continue;
+            }
+
 	        const cpp_dec_float_50 xp = cords.top_left.x + x * cords.step;
 	        const cpp_dec_float_50 yp = cords.top_left.y - y * cords.step;
 
-            //cout << "X: " << x << " : " << xp << "    Y: " << y << " : " << yp << endl;
+	        const int re = iteration_check(xp, yp, Global->max_iterations);
 
-            screen[x + y * width] = iteration_check(xp, yp, 1000);
+            Global->screenMutex.lock();
+            Global->screen[x + y * width] = re + 1;
+            Global->screenMutex.unlock();
         }
     }
+
+    cout << "ended" << endl;
 }
 
-/*
-void calculateMandelbrot(int startRow, int endRow, int i, bool dry_run) {
+inline void moveScreen(int Dx, int Dy, globals* Globals)
+{
+    int* screen = new int[Globals->WIDTH * Globals->HEIGHT];
 
-    if (dry_run)
+    const int height = Globals->HEIGHT;
+    const int width = Globals->WIDTH;
+
+    size_t x,y;
+
+    if (Dy < 0)
+        y = 0;
+    else 
+        y = Dy;
+
+    while (y < height && y < height + Dy)
     {
-        is_alive[i] = false;
-        return;
-    }
-
-    is_alive[i] = true;
-    to_clean = true;
-
-    int last_color = 0, color = 0;
-    bool first = true, change = false;
-    int x = 0, temp_color = 0;
-    cpp_dec_float_50 y_loc = 0, x_loc = 0;
-
-    cout << "Started: " << i << endl;
-
-    if (more_details)
-    {
-        for (int y = startRow; y < endRow and !end_all_threads; y++) {
-            y_loc = maxy - (ystep * y) - (ystep / 2);
-
-            int x = 0;
-
-            for (int x = 0; x < WIDTH and !end_all_threads; x++) {
-                x_loc = minx + (xstep * x) + (xstep / 2);
-
-                color = iteration_check(x_loc, y_loc);
-
-                screenMutex.lock();
-                screen[y * WIDTH + x] = color;
-                screenMutex.unlock();
-            }
-        }
-    }
-    else
-    {
-        for (int y = startRow; y < endRow and !end_all_threads; y++) {
-            y_loc = maxy - (ystep * y);
-
+        if (Dx < 0) 
             x = 0;
-            x_loc = minx + (xstep * x);
+        else
+            x = Dx;
 
-            color = iteration_check(x_loc, y_loc);
-
-            screenMutex.lock();
-            screen[y * WIDTH + x] = color;
-            screenMutex.unlock();
-
-            last_color = color;
-
-            x += 2;
-            while (x < WIDTH and !end_all_threads) {
-                x_loc = minx + (xstep * x);
-
-                color = iteration_check(x_loc, y_loc);
-
-                screenMutex.lock();
-                screen[y * WIDTH + x] = color;
-                screenMutex.unlock();
-
-                if (change)
-                {
-                    change = false;
-                    x += 1;
-                    color = temp_color;
-                }
-                else if (last_color != color)
-                {
-                    temp_color = color;
-                    x -= 1;
-                    change = true;
-                    continue;
-                }
-                else if (last_color == color)
-                {
-                    screenMutex.lock();
-                    screen[y * WIDTH + (x - 1)] = color;
-                    screenMutex.unlock();
-                }
-
-                if (x + 2 < HEIGHT - 1)
-                {
-                    x += 2;
-                }
-                else
-                {
-                    x += 1;
-                }
-                last_color = color;
-            }
-            //cout << y << endl;
+        while (x < width && x < width + Dx)
+        {
+            screen[x + y * width] = Globals->screen[(x - Dx) + (y - Dy) * width];
+            x++;
         }
+
+        y++;
     }
-    cout << "Ended: " << i << endl;
-    is_alive[i] = false;
+
+    Globals->screen = screen;
 }
-*/
+

@@ -8,6 +8,22 @@
 using namespace std;
 using namespace boost::multiprecision;
 
+class globals
+{
+public:
+	const unsigned int WIDTH = 1200;
+	const unsigned int HEIGHT = 900;
+
+	int* screen = new int[WIDTH * HEIGHT];
+	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
+
+	int max_iterations = 20;
+
+	bool end = false;
+
+	std::mutex screenMutex;
+
+};
 
 class point // just a pair of numbers
 {
@@ -29,9 +45,6 @@ class positions // positions and handling coordinates and edge points
 public:
 
 	point top_left;
-	point top_right;
-	point down_left;
-	point down_right;
 
 	cpp_dec_float_50 step;
 
@@ -40,10 +53,6 @@ public:
 		if (WIDTH >= HEIGHT)
 		{
 			step = 4 / (HEIGHT - 1);
-			
-			//cout  << endl;
-			//cout << 4 / (HEIGHT - 1) << endl;
-			//cout << step << endl;
 
 			top_left.y = 2;
 			top_left.x = -(step * ((WIDTH - 1) / 2));
@@ -56,20 +65,14 @@ public:
 			top_left.y = step * ((HEIGHT - 1) / 2);
 		}
 
-		down_left.x = top_left.x;
-		down_left.y = top_left.y - ((HEIGHT - 1) * step);
-
-		top_right.y = top_left.y;
-		top_right.x = top_left.x + ((WIDTH - 1) * step);
-
-		down_right.x = top_right.x;
-		down_right.y = down_left.y;
-
 	}
 
-	static void recalculate()
+	void recalculate(const int Dx, const int Dy)
 	{
+		//cout << "Dx: " << Dx << " Dy: " << Dy << endl;
 
+		this->top_left.x -= (Dx * step);
+		this->top_left.y += (Dy * step);
 	}
 };
 
@@ -96,6 +99,8 @@ class screen_vars
 {
 public:
 	bool has_focus = true;
+	bool after_grab = false;
+	point grab_point;
 
 	void update(const sf::RenderWindow& window)
 	{

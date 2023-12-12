@@ -14,46 +14,34 @@
 using namespace boost::multiprecision;
 using namespace std;
 
-namespace global
+void end(const globals& Global ,const int& code = 0)
 {
-	constexpr unsigned int WIDTH = 1200;
-	constexpr unsigned int HEIGHT = 900;
-
-	int* screen = new int[WIDTH * HEIGHT];
-	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
-
-	int max_iterations = 1000;
-
-	std::mutex screenMutex;
-
-}
-
-void end(const int& code = 0)
-{
-	delete[] global::screen;
-	delete[] global::pixels;
+	delete[] Global.screen;
+	delete[] Global.pixels;
 
 	exit(code);
 }
 
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode(global::WIDTH, global::HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);
+	globals Global;
+
+	sf::RenderWindow window(sf::VideoMode(Global.WIDTH, Global.HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);
 
 	sf::Texture texture;
-	texture.create(global::WIDTH, global::HEIGHT);
+	texture.create(Global.WIDTH, Global.HEIGHT);
 
 	sf::Sprite sprite(texture);
 
 	variables vars;
 
-	load(global::screen, global::WIDTH, global::HEIGHT);
+	load(Global.screen, Global.WIDTH, Global.HEIGHT);
 
-	positions cords(global::WIDTH, global::HEIGHT);
+	positions cords(Global.WIDTH, Global.HEIGHT);
 
-	//cout << cords.step;
+	thread test(testt, &Global, cords);
 
-	thread test(painttest,global::screen, global::WIDTH, global::HEIGHT,cords);
+	//testt(&Global, cords);
 
 	while (window.isOpen())
 	{
@@ -67,20 +55,39 @@ int main()
 		}
 
 		vars.variables_update(window);
-		if (vars.MouseVars.left_button_down)
+		if (vars.MouseVars.left_button_down && !vars.ScreenVars.after_grab && vars.ScreenVars.has_focus)
 		{
-			paint(global::screen, vars, global::WIDTH, global::HEIGHT);
+			//paint(Global.screen, vars, Global.WIDTH, Global.HEIGHT);
+
+			vars.ScreenVars.grab_point.set_point(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+			vars.ScreenVars.after_grab = true;
+
+			Global.end = true;
+			test.join();
+			Global.end = false;
 		}
-		if (vars.MouseVars.right_button_down)
+		if (vars.MouseVars.left_button_down && vars.ScreenVars.after_grab && vars.ScreenVars.has_focus)
 		{
+			sprite.setPosition((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y));
 			
+		}
+		if (!vars.MouseVars.left_button_down && vars.ScreenVars.after_grab && vars.ScreenVars.has_focus)
+		{
+			vars.ScreenVars.after_grab = false;
+
+			sprite.setPosition(0, 0);
+			moveScreen((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y), &Global);
+
+			cords.recalculate((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y));
+
+			test = thread(testt, &Global, cords);
 		}
 
 		if (true)
 		{
-			updatePixels(global::screen, global::pixels, global::WIDTH, global::HEIGHT, global::max_iterations);
+			updatePixels(Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations);
 
-			texture.update(global::pixels);
+			texture.update(Global.pixels);
 
 			window.clear();
 			window.draw(sprite);
@@ -89,6 +96,6 @@ int main()
 		window.display();
 
 	}
-	end(1);
+	end(Global,1);
 }
 
