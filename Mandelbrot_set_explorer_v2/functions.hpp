@@ -113,6 +113,26 @@ inline int iteration_check(cpp_dec_float_50 x, cpp_dec_float_50 y, const int& ma
 
     return max_iterations;
 }
+
+inline void painttest(int* screen, const int& width, const int& height, const positions& cords)
+{
+    cout << cords.top_left.x << endl;
+    cout << cords.top_left.y << endl;
+
+    for (size_t y = 0; y < height; y++)
+    {       
+        for (size_t x = 0; x < width; x++)
+        {
+	        const cpp_dec_float_50 xp = cords.top_left.x + x * cords.step;
+	        const cpp_dec_float_50 yp = cords.top_left.y - y * cords.step;
+
+            //cout << "X: " << x << " : " << xp << "    Y: " << y << " : " << yp << endl;
+
+            screen[x + y * width] = iteration_check(xp, yp, 1000);
+        }
+    }
+}
+
 /*
 void calculateMandelbrot(int startRow, int endRow, int i, bool dry_run) {
 

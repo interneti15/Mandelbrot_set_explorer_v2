@@ -35,14 +35,18 @@ public:
 
 	cpp_dec_float_50 step;
 
-	positions(unsigned int WIDTH, unsigned int HEIGHT) // starting positions dependent on Width and Height
+	positions(cpp_dec_float_50 WIDTH, cpp_dec_float_50 HEIGHT) // starting positions dependent on Width and Height
 	{
 		if (WIDTH >= HEIGHT)
 		{
 			step = 4 / (HEIGHT - 1);
+			
+			//cout  << endl;
+			//cout << 4 / (HEIGHT - 1) << endl;
+			//cout << step << endl;
 
 			top_left.y = 2;
-			top_left.x = step * ((WIDTH - 1) / 2);
+			top_left.x = -(step * ((WIDTH - 1) / 2));
 		}
 		else
 		{

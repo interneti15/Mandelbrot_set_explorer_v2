@@ -49,6 +49,12 @@ int main()
 
 	load(global::screen, global::WIDTH, global::HEIGHT);
 
+	positions cords(global::WIDTH, global::HEIGHT);
+
+	//cout << cords.step;
+
+	thread test(painttest,global::screen, global::WIDTH, global::HEIGHT,cords);
+
 	while (window.isOpen())
 	{
 		sf::Event event;
