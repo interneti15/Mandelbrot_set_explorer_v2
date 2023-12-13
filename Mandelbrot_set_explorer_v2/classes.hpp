@@ -3,6 +3,11 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <SFML/Graphics.hpp>
+#include <vector>
+#include <thread>
+#include <random>
+#include <algorithm>
+#include <iostream>
 
 
 using namespace std;
@@ -17,11 +22,14 @@ public:
 	int* screen = new int[WIDTH * HEIGHT];
 	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
 
-	int max_iterations = 20;
+	const unsigned max_iterations = 1000;
 
-	bool end = false;
+	
 
 	std::mutex screenMutex;
+	const unsigned int CPU_threads = std::thread::hardware_concurrency();
+	
+	bool end = false;
 
 };
 
@@ -71,9 +79,50 @@ public:
 	{
 		//cout << "Dx: " << Dx << " Dy: " << Dy << endl;
 
-		this->top_left.x -= (Dx * step);
-		this->top_left.y += (Dy * step);
+		top_left.x -= (Dx * step);
+		top_left.y += (Dy * step);
 	}
+
+	void zoom_in(int x, int y)
+	{
+		const cpp_dec_float_50 xP = top_left.x + (x * step);
+		const cpp_dec_float_50 yP = top_left.y - (y * step);
+
+		cout << "xP: " << xP << " yP: " << yP << endl;
+
+		step = step / 2;
+
+		top_left.x = xP - (x * step);
+		top_left.y = yP + (y * step);
+	}
+
+	void zoom_out(int x, int y)
+	{
+		const cpp_dec_float_50 xP = top_left.x + (x * step);
+		const cpp_dec_float_50 yP = top_left.y - (y * step);
+
+		cout << "xP: " << xP << " yP: " << yP << endl;
+
+		step = step * 2;
+
+		top_left.x = xP - (x * step);
+		top_left.y = yP + (y * step);
+	}
+};
+
+class intPoint
+{
+public:
+
+	int x;
+	int y;
+
+	intPoint(int x, int y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+	
 };
 
 class mouse_vars
@@ -102,6 +151,9 @@ public:
 	bool after_grab = false;
 	point grab_point;
 
+	bool scroll_swich_up = true;
+	bool scroll_swich_down = true;
+
 	void update(const sf::RenderWindow& window)
 	{
 		has_focus = window.hasFocus();
@@ -122,6 +174,147 @@ public:
 	}
 };
 
+
+
+class threadsHandling
+{
+public:
+	vector<thread> list_of_threads;
+	vector<intPoint> preparedCords;
+
+	void prepare(positions* pos, globals* Global, bool newS)
+	{
+
+		const unsigned int height = Global->HEIGHT;
+		const unsigned int width = Global->WIDTH;
+
+		vector<intPoint> pCords;
+
+		if (!newS || true)
+		{
+			for (size_t y = 0; y < height; y++)
+			{
+				for (size_t x = 0; x < width; x++)
+				{
+					if (Global->screen[x+y*width] == 0)
+					{
+						pCords.push_back(intPoint(x, y));
+					}
+				}
+			}
+		}
+
+		preparedCords.clear();
+
+		std::random_shuffle(pCords.begin(), pCords.end());
+
+		preparedCords = pCords;
+		//cout << "rand" << endl;
+	}
+
+	void killAll(globals* Global)
+	{
+		Global->end = true;
+
+		for (size_t i = 0; i < list_of_threads.size(); i++)
+		{
+			list_of_threads[i].join();
+		}
+
+		Global->end = false;
+	}
+
+	threadsHandling(positions* pos, globals* Global, bool newS = false)
+	{
+		this->prepare(pos, Global, newS);
+
+		int chunk = (int)((preparedCords.size())/ Global->CPU_threads);
+
+		list_of_threads = vector<thread>(Global->CPU_threads);
+
+		//killAll(Global);
+
+		for (size_t i = 0; i < Global->CPU_threads; i++)
+		{
+			if (i == Global->CPU_threads - 1)
+			{
+				list_of_threads[i] = thread(calculatorFunction, i * chunk, preparedCords.size()-1, Global, pos, preparedCords);
+				continue;
+			}
+			list_of_threads[i] = thread(calculatorFunction, i * chunk, (i + 1) * chunk - 1, Global, pos, preparedCords);
+			
+		}
+	}
+
+	void start(positions* pos, globals* Global, bool newS = false)
+	{
+		this->prepare(pos, Global, newS);
+
+		int chunk = (int)((preparedCords.size()) / Global->CPU_threads);
+
+		list_of_threads = vector<thread>(Global->CPU_threads);
+
+		//killAll(Global);
+
+		for (size_t i = 0; i < Global->CPU_threads; i++)
+		{
+			if (i == Global->CPU_threads - 1)
+			{
+				list_of_threads[i] = thread(calculatorFunction, i * chunk, preparedCords.size() - 1, Global, pos, preparedCords);
+				continue;
+			}
+			list_of_threads[i] = thread(calculatorFunction, i * chunk, (i + 1) * chunk - 1, Global, pos, preparedCords);
+
+		}
+	}
+
+private:
+	static bool from0(const cpp_dec_float_50& x, const cpp_dec_float_50& y, const cpp_dec_float_50& len = 50)
+	{
+		return ((x * x) + (y * y)) >= len * len;
+	}
+
+	static int iteration_check(cpp_dec_float_50 x, cpp_dec_float_50 y, const int& max_iterations)
+	{
+		const cpp_dec_float_50 x0 = x;
+		const cpp_dec_float_50 y0 = y;
+
+		for (int i = 0; i < max_iterations; ++i)
+		{
+			if (from0(x, y))
+			{
+				return i;
+			}
+
+			const cpp_dec_float_50 x_temp = x * x - y * y + x0;
+			y = 2 * x * y + y0;
+			x = x_temp;
+		}
+
+		return max_iterations;
+	}
+
+	static void calculatorFunction(int starting_index, int ending_index, globals* Global, positions* cords, const vector<intPoint>& preparedCords)
+	{
+		const int height = Global->HEIGHT;
+		const int width = Global->WIDTH;
+
+		for (size_t i = starting_index; i <= ending_index && !(Global->end); i++)
+		{
+			const int x = preparedCords[i].x;
+			const int y = preparedCords[i].y;
+
+			const cpp_dec_float_50 xp = cords->top_left.x + x * cords->step;
+			const cpp_dec_float_50 yp = cords->top_left.y - y * cords->step;
+
+			const int re = iteration_check(xp, yp, Global->max_iterations);
+
+			Global->screenMutex.lock();
+			Global->screen[x + y * width] = re + 1;
+			Global->screenMutex.unlock();
+		}
+	}
+};
 
 
 

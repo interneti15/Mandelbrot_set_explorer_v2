@@ -39,9 +39,7 @@ int main()
 
 	positions cords(Global.WIDTH, Global.HEIGHT);
 
-	thread test(testt, &Global, cords);
-
-	//testt(&Global, cords);
+	threadsHandling Threads(&cords, &Global);
 
 	while (window.isOpen())
 	{
@@ -62,9 +60,9 @@ int main()
 			vars.ScreenVars.grab_point.set_point(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
 			vars.ScreenVars.after_grab = true;
 
-			Global.end = true;
-			test.join();
-			Global.end = false;
+			
+			Threads.killAll(&Global);
+			
 		}
 		if (vars.MouseVars.left_button_down && vars.ScreenVars.after_grab && vars.ScreenVars.has_focus)
 		{
@@ -76,13 +74,42 @@ int main()
 			vars.ScreenVars.after_grab = false;
 
 			sprite.setPosition(0, 0);
-			moveScreen((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y), &Global);
 
-			cords.recalculate((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y));
+			if ((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x) != 0 && (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y) != 0)
+			{
+				moveScreen((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y), &Global);
 
-			test = thread(testt, &Global, cords);
+				cords.recalculate((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y));
+
+			}
+			Threads.start(&cords, &Global);
 		}
 
+		if ((int)(event.mouseWheelScroll.delta) > 0 && vars.ScreenVars.has_focus && (vars.MouseVars.mousePosition.x >= 0 && vars.MouseVars.mousePosition.x < Global.WIDTH && vars.MouseVars.mousePosition.y >= 0 && vars.MouseVars.mousePosition.y < Global.HEIGHT))
+		{
+			Threads.killAll(&Global);
+
+			cleanScreen(&Global);
+
+			cords.zoom_in(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+
+			Threads.start(&cords, &Global);
+
+			event.mouseWheelScroll.delta = 0;
+		}
+		else if ((int)(event.mouseWheelScroll.delta) < 0 && vars.ScreenVars.has_focus && (vars.MouseVars.mousePosition.x >= 0 && vars.MouseVars.mousePosition.x < Global.WIDTH && vars.MouseVars.mousePosition.y >= 0 && vars.MouseVars.mousePosition.y < Global.HEIGHT))
+		{
+			Threads.killAll(&Global);
+
+			cleanScreen(&Global);
+
+			cords.zoom_out(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+
+			Threads.start(&cords, &Global);
+
+			event.mouseWheelScroll.delta = 0;
+		}
+		
 		if (true)
 		{
 			updatePixels(Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations);

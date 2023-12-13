@@ -42,7 +42,7 @@ inline bool load(int* screen, int width, int height)
     }
     screen[j] = stoi(temp);
  
-    cout << 1;
+    cout << "loaded" << endl;
 }
 
 namespace colorHandling
@@ -99,6 +99,8 @@ inline void paint(int* screen, const variables vars, int width, int height)
 	}
 }
 
+/*
+
 inline bool from0(const cpp_dec_float_50& x, const cpp_dec_float_50& y, const cpp_dec_float_50& len = 50) 
 {
     return ((x * x) + (y * y)) >= len * len;
@@ -128,6 +130,8 @@ inline void testt(globals* Global, const positions& cords)
 {
     cout << "started" << endl;
 
+    cout << "X: " << cords.top_left.x << " Y: " << cords.top_left.y << " S: " << cords.step << endl;
+
 	const int height = Global->HEIGHT;
     const int width = Global->WIDTH;
 
@@ -153,6 +157,8 @@ inline void testt(globals* Global, const positions& cords)
 
     cout << "ended" << endl;
 }
+
+*/
 
 inline void moveScreen(int Dx, int Dy, globals* Globals)
 {
@@ -186,4 +192,11 @@ inline void moveScreen(int Dx, int Dy, globals* Globals)
 
     Globals->screen = screen;
 }
+
+inline void cleanScreen(globals* Globals)
+{
+    Globals->screen = new int[Globals->WIDTH * Globals->HEIGHT];
+}
+
+
 
