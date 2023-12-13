@@ -75,9 +75,44 @@ inline void updatePixels(int* screen, sf::Uint8* pixels, unsigned int WIDTH, uns
 		{
 			int color = screen[y * WIDTH + x] - 1;
 
-            if (color < 0)
+            //cout << color << endl;
+            if (color < 0 && x > 2 && x < WIDTH - 2 && y > 2 && y < HEIGHT - 2)
             {
                 color = 0;
+                int count = 0;
+
+                for (int i = -1; i <= 1 ; i++)
+                {
+                    for (int j = -1; j <= 1; j++)
+                    {
+                        if (!i && !j)
+                        {
+                            continue;
+                        }
+                        else if (screen[(y + i) * WIDTH + (x + j)] - 1 < 0)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            color += screen[(y + i) * WIDTH + (x + j)] - 1;
+                            count++;
+                        }
+                        
+                    }
+                }
+                
+                if (count == 0)
+                {
+                    count = 1;
+                }
+                color = (int)(color / count);
+                
+            }
+
+            if (color < 0)
+            {
+                color = iterations;
             }
 
 			auto rgb = colorHandling::numberToRGB(color, iterations);
@@ -89,6 +124,71 @@ inline void updatePixels(int* screen, sf::Uint8* pixels, unsigned int WIDTH, uns
 			pixels[pixelIndex + 3] = 255;
 		}
 	}
+}
+
+inline void updatePixels_forThread(int* screen, sf::Uint8* pixels, unsigned int WIDTH, unsigned int HEIGHT, const int& iterations, globals* Global)
+{
+    while (!Global->Pend)
+    {
+        for (int y = 0; y < HEIGHT && !Global->Pend; y++)
+        {
+            for (int x = 0; x < WIDTH; x++)
+            {
+                int color = screen[y * WIDTH + x] - 1;
+
+                //cout << color << endl;
+                if (color < 0 && x > 2 && x < WIDTH - 2 && y > 2 && y < HEIGHT - 2)
+                {
+                    color = 0;
+                    int count = 0;
+
+                    for (int i = -1; i <= 1; i++)
+                    {
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            if (!i && !j)
+                            {
+                                continue;
+                            }
+                            else if (screen[(y + i) * WIDTH + (x + j)] - 1 < 0)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                color += screen[(y + i) * WIDTH + (x + j)] - 1;
+                                count++;
+                            }
+
+                        }
+                    }
+
+                    if (count == 0)
+                    {
+                        count = 1;
+                    }
+                    color = (int)(color / count);
+
+                }
+
+                if (color < 0)
+                {
+                    color = iterations;
+                }
+
+                auto rgb = colorHandling::numberToRGB(color, iterations);
+
+                
+                int pixelIndex = (x + y * WIDTH) * 4;
+                Global->pixelMutex.lock();
+                pixels[pixelIndex] = std::get<0>(rgb);
+                pixels[pixelIndex + 1] = std::get<1>(rgb);
+                pixels[pixelIndex + 2] = std::get<2>(rgb);
+                pixels[pixelIndex + 3] = 255;
+                Global->pixelMutex.unlock();
+            }
+        }
+    }
 }
 
 inline void paint(int* screen, const variables vars, int width, int height)

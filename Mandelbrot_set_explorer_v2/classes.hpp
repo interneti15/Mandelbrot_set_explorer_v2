@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <SFML/Graphics.hpp>
@@ -30,6 +31,9 @@ public:
 	const unsigned int CPU_threads = std::thread::hardware_concurrency();
 	
 	bool end = false;
+	bool Pend = false;
+
+	mutex pixelMutex;
 
 };
 
@@ -56,6 +60,8 @@ public:
 
 	cpp_dec_float_50 step;
 
+	cpp_dec_float_50 starting_size;
+
 	positions(cpp_dec_float_50 WIDTH, cpp_dec_float_50 HEIGHT) // starting positions dependent on Width and Height
 	{
 		if (WIDTH >= HEIGHT)
@@ -73,6 +79,7 @@ public:
 			top_left.y = step * ((HEIGHT - 1) / 2);
 		}
 
+		starting_size = HEIGHT * WIDTH * step * step;
 	}
 
 	void recalculate(const int Dx, const int Dy)
@@ -254,8 +261,6 @@ public:
 
 		list_of_threads = vector<thread>(Global->CPU_threads);
 
-		//killAll(Global);
-
 		for (size_t i = 0; i < Global->CPU_threads; i++)
 		{
 			if (i == Global->CPU_threads - 1)
@@ -299,6 +304,11 @@ private:
 		const int height = Global->HEIGHT;
 		const int width = Global->WIDTH;
 
+		if (preparedCords.empty())
+		{
+			return;
+		}
+
 		for (size_t i = starting_index; i <= ending_index && !(Global->end); i++)
 		{
 			const int x = preparedCords[i].x;
@@ -316,5 +326,54 @@ private:
 	}
 };
 
+class screenText
+{
+public:
+	sf::Font font;
+
+	sf::Text xText;
+	sf::Text yText;
+	sf::Text zoomText;
+	
+
+	screenText()
+	{
+		font.loadFromFile("arial.ttf");
+
+		xText = sf::Text("", font, 15);
+		xText.setOutlineColor(sf::Color::Black);
+		xText.setOutlineThickness(1);
+		xText.setPosition(0, 20);
+
+		yText = sf::Text("", font, 15);
+		yText.setOutlineColor(sf::Color::Black);
+		yText.setOutlineThickness(1);
+		yText.setPosition(0, 40);
+
+		zoomText = sf::Text("", font, 15);
+		zoomText.setOutlineColor(sf::Color::Black);
+		zoomText.setOutlineThickness(1);
+		zoomText.setPosition(5, 40);
+	}
+
+	void refresh(const int x, const int y, positions& cords, globals& Global, sf::RenderWindow& window)
+	{
+		
+		const cpp_dec_float_50 zoom = cords.starting_size / (cords.step * Global.HEIGHT * cords.step * Global.HEIGHT);
+		string zoomT = to_string(zoom), zT;
+		zT += zoomT[0];
+		zT += ".";
+		zT += zoomT[2];
+		zT += "xE";
+		zT += to_string(static_cast<int>(log10(zoom)));
+		zoomText.setString("zoom: " + zT);
+
+		window.draw(zoomText);
+	}
+	
+
+private:
+
+};
 
 
