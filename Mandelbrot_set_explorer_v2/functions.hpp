@@ -134,6 +134,7 @@ inline void updatePixels_forThread(int* screen, sf::Uint8* pixels, unsigned int 
         {
             for (int x = 0; x < WIDTH; x++)
             {
+
                 int color = screen[y * WIDTH + x] - 1;
 
                 //cout << color << endl;
@@ -146,17 +147,19 @@ inline void updatePixels_forThread(int* screen, sf::Uint8* pixels, unsigned int 
                     {
                         for (int j = -1; j <= 1; j++)
                         {
+	                        const int Tcolor = screen[(y + i) * WIDTH + (x + j)] - 1;
+
                             if (!i && !j)
                             {
                                 continue;
                             }
-                            else if (screen[(y + i) * WIDTH + (x + j)] - 1 < 0)
+                            else if (Tcolor < 0)
                             {
                                 continue;
                             }
                             else
                             {
-                                color += screen[(y + i) * WIDTH + (x + j)] - 1;
+                                color += Tcolor;
                                 count++;
                             }
 
@@ -262,12 +265,19 @@ inline void testt(globals* Global, const positions& cords)
 
 inline void moveScreen(int Dx, int Dy, globals* Globals)
 {
+    if (Dx == 0 && Dy == 0)
+    {
+        return;
+    }
+
     int* screen = new int[Globals->WIDTH * Globals->HEIGHT];
+    std::fill(screen, screen + Globals->WIDTH * Globals->HEIGHT, 0);
+
 
     const int height = Globals->HEIGHT;
     const int width = Globals->WIDTH;
 
-    size_t x,y;
+    int x,y;
 
     if (Dy < 0)
         y = 0;
@@ -283,6 +293,12 @@ inline void moveScreen(int Dx, int Dy, globals* Globals)
 
         while (x < width && x < width + Dx)
         {
+            if (Globals->screen[(x - Dx) + (y - Dy) * width] > Globals->max_iterations+10 || Globals->screen[(x - Dx) + (y - Dy) * width] < -10)
+            {
+                cout << "er: " << Globals->screen[(x - Dx) + (y - Dy) * width] << endl;
+                cout << x - Dx << endl;
+                cout << y - Dy << endl;
+            }
             screen[x + y * width] = Globals->screen[(x - Dx) + (y - Dy) * width];
             x++;
         }
@@ -295,8 +311,69 @@ inline void moveScreen(int Dx, int Dy, globals* Globals)
 
 inline void cleanScreen(globals* Globals)
 {
-    Globals->screen = new int[Globals->WIDTH * Globals->HEIGHT];
+    //Globals->screen = new int[Globals->WIDTH * Globals->HEIGHT];
+
+    std::fill(Globals->screen, Globals->screen + Globals->WIDTH * Globals->HEIGHT, 0);
+
 }
 
+inline void zoom_in(globals* global, variables* vars)
+{
+    const int mx = vars->MouseVars.mousePosition.x;
+    const int my = vars->MouseVars.mousePosition.y;
 
+    const int height = global->HEIGHT;
+    const int width = global->WIDTH;
+
+    const int sx = (int)(mx / 2);
+    const int sy = (int)(my / 2);
+
+    int* screen = new int[global->WIDTH * global->HEIGHT];
+    std::fill(screen, screen + global->WIDTH * global->HEIGHT, 0);
+
+    for (size_t y = 0; y < height && (sy + (int)(y/2)) < height; y += 2)
+    {
+        for (size_t x = 0;  x < width && (sx + (int)(x/2)) < width;  x += 2)
+        {
+            screen[x + y * width] = global->screen[((sx + (int)(x / 2)) + ((sy + (int)(y / 2))) * width)];
+        }
+    }
+
+    global->screen = screen;
+    
+}
+
+inline void zoom_out(globals* global, variables* vars)
+{
+    const int mx = vars->MouseVars.mousePosition.x;
+    const int my = vars->MouseVars.mousePosition.y;
+
+    const int height = global->HEIGHT;
+    const int width = global->WIDTH;
+
+    const int sx = (int)(mx / 2);
+    const int sy = (int)(my / 2);   
+
+    int* screen = new int[global->WIDTH * global->HEIGHT];
+    std::fill(screen, screen + global->WIDTH * global->HEIGHT, 0);
+
+    for (size_t y = sy; y < sy + (int)(width/2) && (y - sy) * 2 < height; y++)
+    {
+        for (size_t x = sx; x < sx + (int)(width/2) && (x - sx) * 2 < width; x++)
+        {
+            screen[x + y * width] = global->screen[(x - sx)*2 + (y-sy)*2*width];
+        }
+    }
+
+    global->screen = screen;
+
+}
+
+inline bool pointsDistance(const intPoint& p1, const intPoint& p2, const cpp_dec_float_50& R)
+{
+	const cpp_dec_float_50 distanceSquared = (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+    
+    return distanceSquared > R * R;
+
+}
 

@@ -29,11 +29,17 @@ public:
 
 	std::mutex screenMutex;
 	const unsigned int CPU_threads = std::thread::hardware_concurrency();
+	//const unsigned int CPU_threads = 1;
 	
 	bool end = false;
 	bool Pend = false;
 
 	mutex pixelMutex;
+
+	void clean()
+	{
+		std::fill(screen, screen + WIDTH * HEIGHT, 0);
+	}
 
 };
 
@@ -124,12 +130,17 @@ public:
 	int x;
 	int y;
 
-	intPoint(int x, int y)
+	intPoint(int x = 0, int y = 0)
 	{
 		this->x = x;
 		this->y = y;
 	}
 	
+	void set(int x, int y)
+	{
+		this->x = x;
+		this->y = y;
+	}
 };
 
 class mouse_vars
@@ -157,6 +168,8 @@ public:
 	bool has_focus = true;
 	bool after_grab = false;
 	point grab_point;
+
+	intPoint lastposition;
 
 	bool scroll_swich_up = true;
 	bool scroll_swich_down = true;
@@ -203,6 +216,7 @@ public:
 			{
 				for (size_t x = 0; x < width; x++)
 				{
+					//cout << Global->screen[x + y * width] << endl;
 					if (Global->screen[x+y*width] == 0)
 					{
 						pCords.push_back(intPoint(x, y));
@@ -319,6 +333,8 @@ private:
 
 			const int re = iteration_check(xp, yp, Global->max_iterations);
 
+			//cout << x << " : " << y << " : " << re << endl;
+
 			Global->screenMutex.lock();
 			Global->screen[x + y * width] = re + 1;
 			Global->screenMutex.unlock();
@@ -343,31 +359,54 @@ public:
 		xText = sf::Text("", font, 15);
 		xText.setOutlineColor(sf::Color::Black);
 		xText.setOutlineThickness(1);
-		xText.setPosition(0, 20);
+		xText.setPosition(5, 20);
 
 		yText = sf::Text("", font, 15);
 		yText.setOutlineColor(sf::Color::Black);
 		yText.setOutlineThickness(1);
-		yText.setPosition(0, 40);
+		yText.setPosition(5, 40);
 
 		zoomText = sf::Text("", font, 15);
 		zoomText.setOutlineColor(sf::Color::Black);
 		zoomText.setOutlineThickness(1);
-		zoomText.setPosition(5, 40);
+		zoomText.setPosition(5, 60);
 	}
 
 	void refresh(const int x, const int y, positions& cords, globals& Global, sf::RenderWindow& window)
 	{
-		
+
 		const cpp_dec_float_50 zoom = cords.starting_size / (cords.step * Global.HEIGHT * cords.step * Global.HEIGHT);
 		string zoomT = to_string(zoom), zT;
 		zT += zoomT[0];
 		zT += ".";
 		zT += zoomT[2];
-		zT += "xE";
+		zT += "e";
 		zT += to_string(static_cast<int>(log10(zoom)));
 		zoomText.setString("zoom: " + zT);
 
+		std::ostringstream xT, yT;
+		if (!(x < 0 || y < 0 || x > Global.WIDTH - 1 || y > Global.HEIGHT - 1) || (static_cast<int>(log10(zoom))) < 15)
+		{
+			const cpp_dec_float_50 xP = cords.top_left.x + (x * cords.step);
+			const cpp_dec_float_50 yP = cords.top_left.y - (y * cords.step);
+
+			xT << "x: " << xP;
+			yT << "y: " << yP;
+		}
+		else
+		{
+			xT << "x: NaN";
+			yT << "y: NaN";
+		}
+		//cout << "xP: " << xP << " yP: " << yP << endl;
+		
+		xText.setString(xT.str());
+		yText.setString(yT.str());
+
+		
+
+		window.draw(xText);
+		window.draw(yText);
 		window.draw(zoomText);
 	}
 	

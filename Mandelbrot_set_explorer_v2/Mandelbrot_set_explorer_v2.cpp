@@ -30,6 +30,9 @@ void end(globals& Global ,const int& code, threadsHandling& Threads, thread* SC)
 int main()
 {
 	globals Global;
+	Global.clean();
+
+	cout << "Resolution: " << Global.HEIGHT << "X" << Global.WIDTH << endl;
 
 	sf::RenderWindow window(sf::VideoMode(Global.WIDTH, Global.HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);
 
@@ -39,8 +42,6 @@ int main()
 	sf::Sprite sprite(texture);
 
 	variables vars;
-
-	//load(Global.screen, Global.WIDTH, Global.HEIGHT);
 
 	positions cords(Global.WIDTH, Global.HEIGHT);
 
@@ -70,10 +71,42 @@ int main()
 			vars.ScreenVars.grab_point.set_point(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
 			vars.ScreenVars.after_grab = true;
 
+			vars.ScreenVars.lastposition.set(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+
 		}
 		if (vars.MouseVars.left_button_down && vars.ScreenVars.after_grab && vars.ScreenVars.has_focus)
 		{
-			sprite.setPosition((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y));
+			
+
+			if (pointsDistance(vars.ScreenVars.lastposition, intPoint(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y), 30))
+			{
+				vars.ScreenVars.lastposition.set(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+
+				Threads.killAll(&Global);
+
+				sprite.setPosition(0, 0);
+
+				int dx = (int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x);
+				int dy = (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y);
+
+				Global.Pend = true;
+				Sc_update.join();
+				Global.Pend = false;
+
+				moveScreen(dx, dy, &Global);
+				cords.recalculate(dx, dy);
+
+				Sc_update = thread(updatePixels_forThread, Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations, &Global);
+
+				Threads.start(&cords, &Global);
+
+				vars.ScreenVars.grab_point.set_point(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+			}
+			else
+			{
+				sprite.setPosition((int)(vars.MouseVars.mousePosition.x - vars.ScreenVars.grab_point.x), (int)(vars.MouseVars.mousePosition.y - vars.ScreenVars.grab_point.y));
+			}
+			
 			
 		}
 
@@ -109,9 +142,12 @@ int main()
 			Sc_update.join();
 			Global.Pend = false;
 
-			cleanScreen(&Global);
+			//cleanScreen(&Global);
+			zoom_in(&Global, &vars);
 
 			cords.zoom_in(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+
+			cout << "Zin: " << cords.top_left.x << " : " << cords.top_left.y << endl;
 
 			Threads.start(&cords, &Global);
 
@@ -127,9 +163,12 @@ int main()
 			Sc_update.join();
 			Global.Pend = false;
 
-			cleanScreen(&Global);
+			//cleanScreen(&Global);
+			zoom_out(&Global, &vars);
 
 			cords.zoom_out(vars.MouseVars.mousePosition.x, vars.MouseVars.mousePosition.y);
+
+			cout << "Zout: " << cords.top_left.x << " : " << cords.top_left.y << endl;
 
 			Threads.start(&cords, &Global);
 
@@ -153,6 +192,14 @@ int main()
 		}
 
 		window.display();
+
+		if (vars.MouseVars.right_button_down)
+		{
+			
+			//cout << Global.screen[vars.MouseVars.mousePosition.x + Global.WIDTH * vars.MouseVars.mousePosition.y] << endl;
+			
+			
+		}
 
 	}
 	end(Global,1, Threads, &Sc_update);
