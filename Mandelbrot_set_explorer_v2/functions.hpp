@@ -273,6 +273,8 @@ inline void moveScreen(int Dx, int Dy, globals* Globals)
     int* screen = new int[Globals->WIDTH * Globals->HEIGHT];
     std::fill(screen, screen + Globals->WIDTH * Globals->HEIGHT, 0);
 
+    int* history = new int[Globals->WIDTH * Globals->HEIGHT];
+    std::fill(history, history + Globals->WIDTH * Globals->HEIGHT, 0);
 
     const int height = Globals->HEIGHT;
     const int width = Globals->WIDTH;
@@ -300,6 +302,7 @@ inline void moveScreen(int Dx, int Dy, globals* Globals)
                 cout << y - Dy << endl;
             }
             screen[x + y * width] = Globals->screen[(x - Dx) + (y - Dy) * width];
+            history[x + y * width] = Globals->history[(x - Dx) + (y - Dy) * width];
             x++;
         }
 
@@ -307,6 +310,8 @@ inline void moveScreen(int Dx, int Dy, globals* Globals)
     }
 
     Globals->screen = screen;
+    Globals->history = history;
+
 }
 
 inline void cleanScreen(globals* Globals)
@@ -331,16 +336,34 @@ inline void zoom_in(globals* global, variables* vars)
     int* screen = new int[global->WIDTH * global->HEIGHT];
     std::fill(screen, screen + global->WIDTH * global->HEIGHT, 0);
 
+    int* history = new int[global->WIDTH * global->HEIGHT];
+    std::fill(history, history + global->WIDTH * global->HEIGHT, 0);
+
     for (size_t y = 0; y < height && (sy + (int)(y/2)) < height; y += 2)
     {
         for (size_t x = 0;  x < width && (sx + (int)(x/2)) < width;  x += 2)
         {
-            screen[x + y * width] = global->screen[((sx + (int)(x / 2)) + ((sy + (int)(y / 2))) * width)];
+            if (global->history[x + y * width] > 2)
+            {
+                //cout << "gg" << endl;
+
+                screen[x + y * width] = 0;
+
+                history[x + y * width] = 0;
+                history[((sx + (int)(x / 2)) + ((sy + (int)(y / 2))) * width)] = 0;
+            }
+            else
+            {
+                screen[x + y * width] = global->screen[((sx + (int)(x / 2)) + ((sy + (int)(y / 2))) * width)];
+
+                history[x + y * width] = global->history[((sx + (int)(x / 2)) + ((sy + (int)(y / 2))) * width)] + 1;
+                history[((sx + (int)(x / 2)) + ((sy + (int)(y / 2))) * width)] = 0;
+            }
         }
     }
 
     global->screen = screen;
-    
+    global->history = history;
 }
 
 inline void zoom_out(globals* global, variables* vars)
@@ -348,8 +371,8 @@ inline void zoom_out(globals* global, variables* vars)
     const int mx = vars->MouseVars.mousePosition.x;
     const int my = vars->MouseVars.mousePosition.y;
 
-    const int height = global->HEIGHT;
-    const int width = global->WIDTH;
+    const unsigned int height = global->HEIGHT;
+    const unsigned int width = global->WIDTH;
 
     const int sx = (int)(mx / 2);
     const int sy = (int)(my / 2);   
@@ -366,6 +389,7 @@ inline void zoom_out(globals* global, variables* vars)
     }
 
     global->screen = screen;
+    global->historyReset();
 
 }
 

@@ -21,11 +21,10 @@ public:
 	const unsigned int HEIGHT = 900;
 
 	int* screen = new int[WIDTH * HEIGHT];
+	int* history = new int[WIDTH * HEIGHT];
 	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
 
 	const unsigned max_iterations = 1000;
-
-	
 
 	std::mutex screenMutex;
 	const unsigned int CPU_threads = std::thread::hardware_concurrency();
@@ -39,6 +38,12 @@ public:
 	void clean()
 	{
 		std::fill(screen, screen + WIDTH * HEIGHT, 0);
+		std::fill(history, history + WIDTH * HEIGHT, 0);
+	}
+
+	void historyReset()
+	{
+		std::fill(history, history + WIDTH * HEIGHT, 0);
 	}
 
 };
