@@ -32,6 +32,16 @@ int main()
 	globals Global;
 	Global.clean();
 
+	/*
+	printf("Do you want to accelerate computing with Cuda compatible Gpu? \n [0] - No \n [1] - Yes\n");
+	while (!(sf::Keyboard::isKeyPressed(sf::Keyboard::Num0) || sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)))
+	{
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
+		{
+			Global.GpuAcceleration = true;
+		}
+	}*/
+
 	cout << "Resolution: " << Global.HEIGHT << "X" << Global.WIDTH << endl;
 
 	sf::RenderWindow window(sf::VideoMode(Global.WIDTH, Global.HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);

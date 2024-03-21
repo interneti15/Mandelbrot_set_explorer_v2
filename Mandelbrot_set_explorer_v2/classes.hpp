@@ -20,9 +20,15 @@ public:
 	const unsigned int WIDTH = 1200;
 	const unsigned int HEIGHT = 900;
 
-	int* screen = new int[WIDTH * HEIGHT];
-	int* history = new int[WIDTH * HEIGHT];
-	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4];
+	int* screen = new int[WIDTH * HEIGHT]();
+	int* history = new int[WIDTH * HEIGHT]();
+	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4]();
+
+	//bool GpuAcceleration = false;
+
+	//int* screen = static_cast<int*>(calloc(WIDTH * HEIGHT, sizeof(int)));
+	//int* history = static_cast<int*>(calloc(WIDTH * HEIGHT, sizeof(int)));
+	//sf::Uint8* pixels = static_cast<sf::Uint8*>(calloc(WIDTH * HEIGHT * 4, sizeof(sf::Uint8)));
 
 	const unsigned max_iterations = 1000;
 
