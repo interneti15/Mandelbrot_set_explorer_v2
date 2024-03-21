@@ -24,7 +24,7 @@ public:
 	int* history = new int[WIDTH * HEIGHT]();
 	sf::Uint8* pixels = new sf::Uint8[WIDTH * HEIGHT * 4]();
 
-	//bool GpuAcceleration = false;
+	bool GpuAcceleration = false;
 
 	//int* screen = static_cast<int*>(calloc(WIDTH * HEIGHT, sizeof(int)));
 	//int* history = static_cast<int*>(calloc(WIDTH * HEIGHT, sizeof(int)));
@@ -35,7 +35,7 @@ public:
 	std::mutex screenMutex;
 	const unsigned int CPU_threads = std::thread::hardware_concurrency();
 	//const unsigned int CPU_threads = 1;
-	
+
 	bool end = false;
 	bool Pend = false;
 
@@ -146,7 +146,7 @@ public:
 		this->x = x;
 		this->y = y;
 	}
-	
+
 	void set(int x, int y)
 	{
 		this->x = x;
@@ -228,7 +228,7 @@ public:
 				for (size_t x = 0; x < width; x++)
 				{
 					//cout << Global->screen[x + y * width] << endl;
-					if (Global->screen[x+y*width] == 0)
+					if (Global->screen[x + y * width] == 0)
 					{
 						pCords.push_back(intPoint(x, y));
 					}
@@ -260,7 +260,7 @@ public:
 	{
 		this->prepare(pos, Global, newS);
 
-		int chunk = (int)((preparedCords.size())/ Global->CPU_threads);
+		int chunk = (int)((preparedCords.size()) / Global->CPU_threads);
 
 		list_of_threads = vector<thread>(Global->CPU_threads);
 
@@ -270,11 +270,11 @@ public:
 		{
 			if (i == Global->CPU_threads - 1)
 			{
-				list_of_threads[i] = thread(calculatorFunction, i * chunk, preparedCords.size()-1, Global, pos, preparedCords);
+				list_of_threads[i] = thread(calculatorFunction, i * chunk, preparedCords.size() - 1, Global, pos, preparedCords);
 				continue;
 			}
 			list_of_threads[i] = thread(calculatorFunction, i * chunk, (i + 1) * chunk - 1, Global, pos, preparedCords);
-			
+
 		}
 	}
 
@@ -361,7 +361,7 @@ public:
 	sf::Text xText;
 	sf::Text yText;
 	sf::Text zoomText;
-	
+
 
 	screenText()
 	{
@@ -410,17 +410,17 @@ public:
 			yT << "y: NaN";
 		}
 		//cout << "xP: " << xP << " yP: " << yP << endl;
-		
+
 		xText.setString(xT.str());
 		yText.setString(yT.str());
 
-		
+
 
 		window.draw(xText);
 		window.draw(yText);
 		window.draw(zoomText);
 	}
-	
+
 
 private:
 
