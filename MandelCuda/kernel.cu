@@ -32,30 +32,59 @@ void end(globals& Global, const int& code, threadsHandling& Threads, thread* SC)
 	exit(code);
 }
 
-class abc {
+void cpTest() {
+	constexpr int size = 50;
 
-public:
-	thrust::host_vector<int> a;
-	thrust::device_vector<int> b;
+	myNumLib::precisionNumber A = myNumLib::precisionNumber::precisionNumberConstructor(size);
+	myNumLib::precisionNumber B = myNumLib::precisionNumber::precisionNumberConstructor(size);
+	myNumLib::precisionNumber C = myNumLib::precisionNumber::precisionNumberConstructor(size);
 
-};
-
-__global__ void test(thrust::device_vector<int> ab)
-{
-
-	for (int i : ab)
+	for (size_t i = 0; i < size; i++)
 	{
-		printf("%d", i);
+		A.top.number[i] = 1;
+		B.top.number[i] = 2;
 	}
+
+	C.top = myNumLib::bigInt::add(A.top, B.top);
+
+	for (int i = 0; i < size; i++)
+	{
+		printf("%d : %d \n", i, C.top.number[i]);
+	}
+
+	printf("\nCpu finished...\n");
+}
+
+__global__ void test()
+{
+	constexpr int size = 50;
+
+	myNumLib::precisionNumber A = myNumLib::precisionNumber::devicePrecisionNumberConstructor(size);
+	myNumLib::precisionNumber B = myNumLib::precisionNumber::devicePrecisionNumberConstructor(size);
+	myNumLib::precisionNumber C = myNumLib::precisionNumber::devicePrecisionNumberConstructor(size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		A.top.number[i] = 1;
+		B.top.number[i] = 2;
+	}
+
+	C.top = myNumLib::bigInt::deviceAdd(A.top, B.top);
+
+	for (int i = 0; i < size; i++)
+	{
+		printf("%d : %d \n", i, C.top.number[i]);
+	}
+
+	printf("\nKernel finished...\n");
 }
 
 int main()
 {
 	globals Global;
 	Global.clean();
-
 	
-	printf("Do you want to accelerate computing with Cuda compatible Gpu? \n [0] - No \n [1] - Yes\n");
+	printf("Do you want to accelerate computing with Cuda compatible Gpu?\n[0] - No\n[1] - Yes\n");
 	while (!(sf::Keyboard::isKeyPressed(sf::Keyboard::Num0) || sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)))
 	{
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
@@ -67,20 +96,10 @@ int main()
 
 
 	//vector<int> te = { 1,2,3,4 };
+	cpTest();
+	//test<< <1, 1 >> > ();
 
-	//test<< <1, 1 >> > (te);
-
-
-
-
-
-
-
-
-
-
-
-	return 0;
+	//return 0;
 	cout << "Resolution: " << Global.HEIGHT << "X" << Global.WIDTH << endl;
 
 	sf::RenderWindow window(sf::VideoMode(Global.WIDTH, Global.HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);
