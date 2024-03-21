@@ -346,9 +346,9 @@ private:
 
 			//cout << x << " : " << y << " : " << re << endl;
 
-			Global->screenMutex.lock();
+			//Global->screenMutex.lock();
 			Global->screen[x + y * width] = re + 1;
-			Global->screenMutex.unlock();
+			//Global->screenMutex.unlock();
 		}
 	}
 };

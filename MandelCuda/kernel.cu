@@ -4,11 +4,16 @@
 #include <SFML/Graphics.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <cuda_runtime.h>
 
 //#include "classes.hpp"
 #include "functions.hpp"
 
 #include <mutex>
+
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/transform.h>
 
 
 using namespace boost::multiprecision;
@@ -25,6 +30,23 @@ void end(globals& Global, const int& code, threadsHandling& Threads, thread* SC)
 	delete[] Global.pixels;
 
 	exit(code);
+}
+
+class abc {
+
+public:
+	thrust::host_vector<int> a;
+	thrust::device_vector<int> b;
+
+};
+
+__global__ void test(abc ab)
+{
+
+	for (int i : ab.b)
+	{
+		printf("%d", i);
+	}
 }
 
 int main()
@@ -44,6 +66,19 @@ int main()
 	printf("Gpu acceleration: %d \n", Global.GpuAcceleration);
 
 
+	thrust::host_vector<int> te = { 1,2,3,4 };
+	abc xd;
+	xd.a = te;
+	xd.b = te;
+
+	test<< <1, 1 >> > (xd);
+
+
+
+
+
+
+	//return 0;
 	cout << "Resolution: " << Global.HEIGHT << "X" << Global.WIDTH << endl;
 
 	sf::RenderWindow window(sf::VideoMode(Global.WIDTH, Global.HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);
@@ -59,7 +94,7 @@ int main()
 
 	threadsHandling Threads(&cords, &Global);
 
-	thread Sc_update(updatePixels_forThread, Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations, &Global);
+	thread Sc_update(updatePixels_forThread, &Global);
 
 	screenText screentext;
 
@@ -108,7 +143,7 @@ int main()
 				moveScreen(dx, dy, &Global);
 				cords.recalculate(dx, dy);
 
-				Sc_update = thread(updatePixels_forThread, Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations, &Global);
+				Sc_update = thread(updatePixels_forThread, &Global);
 
 				Threads.start(&cords, &Global);
 
@@ -140,7 +175,7 @@ int main()
 			moveScreen(dx, dy, &Global);
 			cords.recalculate(dx, dy);
 
-			Sc_update = thread(updatePixels_forThread, Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations, &Global);
+			Sc_update = thread(updatePixels_forThread, &Global);
 
 			Threads.start(&cords, &Global);
 		}
@@ -165,7 +200,7 @@ int main()
 
 			event.mouseWheelScroll.delta = 0;
 
-			Sc_update = thread(updatePixels_forThread, Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations, &Global);
+			Sc_update = thread(updatePixels_forThread, &Global);
 		}
 		else if ((int)(event.mouseWheelScroll.delta) < 0 && vars.ScreenVars.has_focus && (vars.MouseVars.mousePosition.x >= 0 && vars.MouseVars.mousePosition.x < Global.WIDTH && vars.MouseVars.mousePosition.y >= 0 && vars.MouseVars.mousePosition.y < Global.HEIGHT))
 		{
@@ -186,7 +221,7 @@ int main()
 
 			event.mouseWheelScroll.delta = 0;
 
-			Sc_update = thread(updatePixels_forThread, Global.screen, Global.pixels, Global.WIDTH, Global.HEIGHT, Global.max_iterations, &Global);
+			Sc_update = thread(updatePixels_forThread, &Global);
 		}
 
 		if (true)

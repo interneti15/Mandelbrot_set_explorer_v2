@@ -126,19 +126,22 @@ inline void updatePixels(int* screen, sf::Uint8* pixels, unsigned int WIDTH, uns
     }
 }
 
-inline void updatePixels_forThread(int* screen, sf::Uint8* pixels, unsigned int WIDTH, unsigned int HEIGHT, const int& iterations, globals* Global)
+inline void updatePixels_forThread(globals* Global)
 {
+    //inline void updatePixels_forThread(int* screen, sf::Uint8* pixels, unsigned int WIDTH, unsigned int HEIGHT, const int& iterations, globals* Global)
+
+
     while (!Global->Pend)
     {
-        for (int y = 0; y < HEIGHT && !Global->Pend; y++)
+        for (int y = 0; y < Global->HEIGHT && !Global->Pend; y++)
         {
-            for (int x = 0; x < WIDTH; x++)
+            for (int x = 0; x < Global->WIDTH; x++)
             {
 
-                int color = screen[y * WIDTH + x] - 1;
+                int color = Global->screen[y * Global->WIDTH + x] - 1;
 
                 //cout << color << endl;
-                if (color < 0 && x > 2 && x < WIDTH - 2 && y > 2 && y < HEIGHT - 2)
+                if (color < 0 && x > 2 && x < Global->WIDTH - 2 && y > 2 && y < Global->HEIGHT - 2)
                 {
                     color = 0;
                     int count = 0;
@@ -147,7 +150,7 @@ inline void updatePixels_forThread(int* screen, sf::Uint8* pixels, unsigned int 
                     {
                         for (int j = -1; j <= 1; j++)
                         {
-                            const int Tcolor = screen[(y + i) * WIDTH + (x + j)] - 1;
+                            const int Tcolor = Global->screen[(y + i) * Global->WIDTH + (x + j)] - 1;
 
                             if (!i && !j)
                             {
@@ -176,18 +179,18 @@ inline void updatePixels_forThread(int* screen, sf::Uint8* pixels, unsigned int 
 
                 if (color < 0)
                 {
-                    color = iterations;
+                    color = Global->max_iterations;
                 }
 
-                auto rgb = colorHandling::numberToRGB(color, iterations);
+                auto rgb = colorHandling::numberToRGB(color, Global->max_iterations);
 
 
-                int pixelIndex = (x + y * WIDTH) * 4;
+                int pixelIndex = (x + y * Global->WIDTH) * 4;
                 Global->pixelMutex.lock();
-                pixels[pixelIndex] = std::get<0>(rgb);
-                pixels[pixelIndex + 1] = std::get<1>(rgb);
-                pixels[pixelIndex + 2] = std::get<2>(rgb);
-                pixels[pixelIndex + 3] = 255;
+                Global->pixels[pixelIndex] = std::get<0>(rgb);
+                Global->pixels[pixelIndex + 1] = std::get<1>(rgb);
+                Global->pixels[pixelIndex + 2] = std::get<2>(rgb);
+                Global->pixels[pixelIndex + 3] = 255;
                 Global->pixelMutex.unlock();
             }
         }
