@@ -94,6 +94,9 @@
     <ClInclude Include="classes.hpp" />
     <ClInclude Include="functions.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cppPrecisionNums.hpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.4.targets" />

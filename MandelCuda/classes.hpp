@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cppPrecisionNums.hpp"
+
 #include <SFML/Graphics.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>

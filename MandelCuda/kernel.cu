@@ -40,10 +40,10 @@ public:
 
 };
 
-__global__ void test(abc ab)
+__global__ void test(thrust::device_vector<int> ab)
 {
 
-	for (int i : ab.b)
+	for (int i : ab)
 	{
 		printf("%d", i);
 	}
@@ -66,19 +66,21 @@ int main()
 	printf("Gpu acceleration: %d \n", Global.GpuAcceleration);
 
 
-	thrust::host_vector<int> te = { 1,2,3,4 };
-	abc xd;
-	xd.a = te;
-	xd.b = te;
+	//vector<int> te = { 1,2,3,4 };
 
-	test<< <1, 1 >> > (xd);
+	//test<< <1, 1 >> > (te);
 
 
 
 
 
 
-	//return 0;
+
+
+
+
+
+	return 0;
 	cout << "Resolution: " << Global.HEIGHT << "X" << Global.WIDTH << endl;
 
 	sf::RenderWindow window(sf::VideoMode(Global.WIDTH, Global.HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);
