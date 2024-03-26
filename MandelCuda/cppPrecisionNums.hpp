@@ -127,41 +127,43 @@ namespace myNumLib
 
         }
 
-        static bigInt extendMAX_SIZE(const bigInt toExtend, const int MAX_SIZE) {
-            bigInt toReturn;
-            toReturn.bigIntConstructor(MAX_SIZE);
+        void extendMAX_SIZE(const int MAX_SIZE) {
+            
+            unsigned char* newNumber = new unsigned char[MAX_SIZE]();
 
-            for (size_t i = 0; i < toExtend.SIZE; i++)
+            for (size_t i = 0; i < this->SIZE; i++)
             {
-                toReturn.number[i] = toExtend.number[i];
+                newNumber[i] = this->number[i];
             }
 
-            return toReturn;
+            delete this->number;
+            this->number = newNumber;
         }
 
-        __device__ static bigInt deviceExtendMAX_SIZE(const bigInt toExtend, const int MAX_SIZE) {
-            bigInt toReturn;
-            toReturn.deviceBigIntConstructor(MAX_SIZE);
+        __device__ void deviceExtendMAX_SIZE(const int MAX_SIZE) {
 
-            for (size_t i = 0; i < toExtend.SIZE; i++)
+            unsigned char* newNumber = new unsigned char[MAX_SIZE]();
+
+            for (size_t i = 0; i < this->SIZE; i++)
             {
-                toReturn.number[i] = toExtend.number[i];
+                newNumber[i] = this->number[i];
             }
 
-            return toReturn;
+            delete this->number;
+            this->number = newNumber;
         }
 
         static bigInt add(bigInt a, bigInt b) {
 
             const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
 
-            if (a.SIZE > b.SIZE)
+            if (a.SIZE < b.SIZE)
             {
-                a = extendMAX_SIZE(a, b.SIZE);
+                a.extendMAX_SIZE(b.SIZE);
             }
-            else if (b.SIZE > a.SIZE)
+            else if (b.SIZE < a.SIZE)
             {
-                b = extendMAX_SIZE(b, a.SIZE);
+                b.extendMAX_SIZE(a.SIZE);
             }
 
             bigInt toReturn = bigIntConstructor(MAX_SIZE);
@@ -192,13 +194,13 @@ namespace myNumLib
 
             const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
 
-            if (a.SIZE > b.SIZE)
+            if (a.SIZE < b.SIZE)
             {
-                a = deviceExtendMAX_SIZE(a, b.SIZE);
+                a.deviceExtendMAX_SIZE(b.SIZE);
             }
-            else if (b.SIZE > a.SIZE)
+            else if (b.SIZE < a.SIZE)
             {
-                b = deviceExtendMAX_SIZE(b, a.SIZE);
+                b.deviceExtendMAX_SIZE(a.SIZE);
             }
 
             bigInt toReturn = deviceBigIntConstructor(MAX_SIZE);
@@ -225,6 +227,66 @@ namespace myNumLib
             return toReturn;
         }
 
+        // Long multiplication
+        static bigInt multiply(const bigInt& a, const bigInt& b) { 
+            // Determine the size of the result array
+            const int resultSize = a.SIZE + b.SIZE;
+
+            // Initialize the result to store the multiplication result
+            bigInt result = bigIntConstructor(resultSize);
+
+            // Perform multiplication using long multiplication algorithm
+            for (int i = 0; i < a.SIZE; ++i) {
+                unsigned char carry = 0;
+                for (int j = 0; j < b.SIZE || carry; ++j) {
+                    unsigned long long current = result.number[i + j] + (unsigned long long)a.number[i] * (j < b.SIZE ? b.number[j] : 0) + carry;
+                    result.number[i + j] = static_cast<unsigned char>(current % (UNSIGNED_CHAR_MAX + 1));
+                    carry = static_cast<unsigned char>(current / (UNSIGNED_CHAR_MAX + 1));
+                }
+            }
+            /*
+            // Trim leading zeros if any
+            int newSize = resultSize;
+            while (newSize > 1 && result.number[newSize - 1] == 0) {
+                newSize--;
+            }
+
+            // Update the result size
+            result.SIZE = newSize;
+            */
+            return result;
+        }
+
+        // Long multiplication for on kernel usage
+        __device__ static bigInt deviceMultiply(const bigInt& a, const bigInt& b) {
+            // Determine the size of the result array
+            const int resultSize = a.SIZE + b.SIZE;
+
+            // Initialize the result to store the multiplication result
+            bigInt result = deviceBigIntConstructor(resultSize);
+
+            // Perform multiplication using long multiplication algorithm
+            for (int i = 0; i < a.SIZE; ++i) {
+                unsigned char carry = 0;
+                for (int j = 0; j < b.SIZE || carry; ++j) {
+                    unsigned long long current = result.number[i + j] + (unsigned long long)a.number[i] * (j < b.SIZE ? b.number[j] : 0) + carry;
+                    result.number[i + j] = static_cast<unsigned char>(current % (UNSIGNED_CHAR_MAX + 1));
+                    carry = static_cast<unsigned char>(current / (UNSIGNED_CHAR_MAX + 1));
+                }
+            }
+
+            /*
+            // Trim leading zeros if any
+            int newSize = resultSize;
+            while (newSize > 1 && result.number[newSize - 1] == 0) {
+                newSize--;
+            }
+
+            // Update the result size
+            result.SIZE = newSize;
+            */
+            return result;
+        }
     };
 
     class precisionNumber

@@ -10,6 +10,7 @@
 #include "functions.hpp"
 
 #include <mutex>
+#include <chrono>
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
@@ -33,23 +34,21 @@ void end(globals& Global, const int& code, threadsHandling& Threads, thread* SC)
 }
 
 void cpTest() {
-	constexpr int size = 50;
+	constexpr int size = 10;
 
-	myNumLib::precisionNumber A = myNumLib::precisionNumber::precisionNumberConstructor(size);
-	myNumLib::precisionNumber B = myNumLib::precisionNumber::precisionNumberConstructor(size);
-	myNumLib::precisionNumber C = myNumLib::precisionNumber::precisionNumberConstructor(size);
+	myNumLib::bigInt A = myNumLib::bigInt::bigIntConstructor(size);
+	myNumLib::bigInt B = myNumLib::bigInt::bigIntConstructor(size);
 
-	for (size_t i = 0; i < size; i++)
-	{
-		A.top.number[i] = 1;
-		B.top.number[i] = 2;
-	}
+	A.number[1] = 2;
+	A.number[0] = 1;
 
-	C.top = myNumLib::bigInt::add(A.top, B.top);
+	B.number[1] = 1;
+	B.number[0] = 1;
+	
+	myNumLib::bigInt C = myNumLib::bigInt::multiply(A, B);
 
-	for (int i = 0; i < size; i++)
-	{
-		printf("%d : %d \n", i, C.top.number[i]);
+	for (int i = size - 1; i >= 0; i--) {
+		printf("%d ,", C.number[i]);
 	}
 
 	printf("\nCpu finished...\n");
@@ -57,23 +56,23 @@ void cpTest() {
 
 __global__ void test()
 {
-	constexpr int size = 50;
+	printf("Kernel started\n");
+	constexpr int size = 10;
 
-	myNumLib::precisionNumber A = myNumLib::precisionNumber::devicePrecisionNumberConstructor(size);
-	myNumLib::precisionNumber B = myNumLib::precisionNumber::devicePrecisionNumberConstructor(size);
-	myNumLib::precisionNumber C = myNumLib::precisionNumber::devicePrecisionNumberConstructor(size);
+	myNumLib::bigInt A = myNumLib::bigInt::deviceBigIntConstructor(size);
+	myNumLib::bigInt B = myNumLib::bigInt::deviceBigIntConstructor(size);
 
-	for (size_t i = 0; i < size; i++)
-	{
-		A.top.number[i] = 1;
-		B.top.number[i] = 2;
-	}
+	A.number[1] = 2;
+	A.number[0] = 1;
 
-	C.top = myNumLib::bigInt::deviceAdd(A.top, B.top);
+	B.number[1] = 1;
+	B.number[0] = 1;
 
-	for (int i = 0; i < size; i++)
-	{
-		printf("%d : %d \n", i, C.top.number[i]);
+	printf("starting multiplication\n");
+	myNumLib::bigInt C = myNumLib::bigInt::deviceMultiply(A, B);
+
+	for (int i = size - 1; i >= 0; i--) {
+		printf("%d ,", C.number[i]);
 	}
 
 	printf("\nKernel finished...\n");
@@ -81,8 +80,15 @@ __global__ void test()
 
 int main()
 {
+
 	globals Global;
 	Global.clean();
+
+	//cpTest();
+
+	test << <1, 1 >> > ();
+
+	return 0;
 	
 	printf("Do you want to accelerate computing with Cuda compatible Gpu?\n[0] - No\n[1] - Yes\n");
 	while (!(sf::Keyboard::isKeyPressed(sf::Keyboard::Num0) || sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)))
@@ -96,10 +102,9 @@ int main()
 
 
 	//vector<int> te = { 1,2,3,4 };
-	cpTest();
+	
 	//test<< <1, 1 >> > ();
 
-	//return 0;
 	cout << "Resolution: " << Global.HEIGHT << "X" << Global.WIDTH << endl;
 
 	sf::RenderWindow window(sf::VideoMode(Global.WIDTH, Global.HEIGHT), "Mandelbrot Set", sf::Style::Titlebar | sf::Style::Close);
