@@ -36,18 +36,20 @@ void end(globals& Global, const int& code, threadsHandling& Threads, thread* SC)
 void cpTest() {
 	constexpr int size = 10;
 
-	myNumLib::bigInt A = myNumLib::bigInt::bigIntConstructor(size);
-	myNumLib::bigInt B = myNumLib::bigInt::bigIntConstructor(size);
+	myNumLib::bigInt A = myNumLib::bigInt::bigIntConstructor(10);
+	myNumLib::bigInt B = myNumLib::bigInt::bigIntConstructor(1);
 
-	A.number[1] = 2;
-	A.number[0] = 1;
+	A.number[1] = 255;
+	A.number[0] = 255;
 
-	B.number[1] = 1;
+	//B.number[1] = 0;
 	B.number[0] = 1;
-	
-	myNumLib::bigInt C = myNumLib::bigInt::multiply(A, B);
 
-	for (int i = size - 1; i >= 0; i--) {
+	printf("starting math...\n");
+	myNumLib::bigInt C = myNumLib::bigInt::add(A, B);
+	//C.deviceAutoTrim();
+
+	for (int i = C.SIZE - 1; i >= 0; i--) {
 		printf("%d ,", C.number[i]);
 	}
 
@@ -59,19 +61,20 @@ __global__ void test()
 	printf("Kernel started\n");
 	constexpr int size = 10;
 
-	myNumLib::bigInt A = myNumLib::bigInt::deviceBigIntConstructor(size);
-	myNumLib::bigInt B = myNumLib::bigInt::deviceBigIntConstructor(size);
+	myNumLib::bigInt A = myNumLib::bigInt::deviceBigIntConstructor(10);
+	myNumLib::bigInt B = myNumLib::bigInt::deviceBigIntConstructor(1);
 
-	A.number[1] = 2;
-	A.number[0] = 1;
+	A.number[1] = 255;
+	A.number[0] = 255;
 
-	B.number[1] = 1;
+	//B.number[1] = 0;
 	B.number[0] = 1;
 
-	printf("starting multiplication\n");
-	myNumLib::bigInt C = myNumLib::bigInt::deviceMultiply(A, B);
+	printf("starting math...\n");
+	myNumLib::bigInt C = myNumLib::bigInt::deviceAdd(A, B);
+	//C.deviceAutoTrim();
 
-	for (int i = size - 1; i >= 0; i--) {
+	for (int i = C.SIZE - 1; i >= 0; i--) {
 		printf("%d ,", C.number[i]);
 	}
 

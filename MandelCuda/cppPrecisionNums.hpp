@@ -5,37 +5,43 @@
 
 namespace myNumLib
 {
-    const unsigned char UNSIGNED_CHAR_MAX = 255;
+	constexpr unsigned char UNSIGNED_CHAR_MAX = 255;
 
     class bigInt 
     {
-    private:
-
-        
-
     public:
-        unsigned char* number;
-        int SIZE;
+        unsigned char* number;// Array representing the number
+        size_t SIZE;// Size of the array
+        bool sign = true;// true = positive number, false = negative number
 
-        static bigInt bigIntConstructor(const int MAX_SIZE = 50) {
+        // Constructor
+        static bigInt bigIntConstructor(const int MAX_SIZE = 50, bool SIGN = true) {
             bigInt toReturn;
 
             toReturn.number = new unsigned char[MAX_SIZE]();
             toReturn.SIZE = MAX_SIZE;
+            toReturn.sign = SIGN;
 
             return toReturn;
         }
 
-        __device__ static bigInt deviceBigIntConstructor(const int MAX_SIZE = 50) {
+        // Constructor, when called on kernel thread
+        __device__ static bigInt deviceBigIntConstructor(const int MAX_SIZE = 50, bool SIGN = true) {
             bigInt toReturn;
 
             toReturn.number = new unsigned char[MAX_SIZE]();
             toReturn.SIZE = MAX_SIZE;
+            toReturn.sign = SIGN;
 
             return toReturn;
         }
 
         static bool isFirstBiggerThenSecond(const bigInt a, const bigInt b) {
+
+            if (a.sign && !b.sign) // if a is positive and b is negative
+            {
+                return true;
+            }
 
             const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
 
@@ -78,10 +84,15 @@ namespace myNumLib
                     }
                 }
             }
-
+            return false;
         }
 
         __device__ static bool deviceisFirstBiggerThenSecond(const bigInt a, const bigInt b) {
+
+            if (a.sign && !b.sign) // if a is positive and b is negative
+            {
+                return true;
+            }
 
             const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
 
@@ -124,68 +135,217 @@ namespace myNumLib
                     }
                 }
             }
-
+            return false;
         }
 
-        void extendMAX_SIZE(const int MAX_SIZE) {
+        // Extend the lenght of the array storing the data to accomodate higher numbers
+        void extendMAX_SIZE(const int desiredSize) {
             
-            unsigned char* newNumber = new unsigned char[MAX_SIZE]();
+            unsigned char* newNumber = new unsigned char[desiredSize]();
 
             for (size_t i = 0; i < this->SIZE; i++)
             {
                 newNumber[i] = this->number[i];
             }
 
-            delete this->number;
+            delete[] this->number;
             this->number = newNumber;
         }
 
-        __device__ void deviceExtendMAX_SIZE(const int MAX_SIZE) {
+        // Extend the lenght of the array storing the data to accomodate higher numbers
+        __device__ void deviceExtendMAX_SIZE(const int desiredSize) {
 
-            unsigned char* newNumber = new unsigned char[MAX_SIZE]();
+            unsigned char* newNumber = new unsigned char[desiredSize]();
 
             for (size_t i = 0; i < this->SIZE; i++)
             {
                 newNumber[i] = this->number[i];
             }
 
-            delete this->number;
+            delete[] this->number;
             this->number = newNumber;
+        }
+
+        // Auto trim 0 from the front of the number, used to reduce the allocation size of the object, Manual argument - Trim to be no smaller than this argument, force argument - force manual
+        void autoTrim(long long manual = 0, bool force = false) {
+            
+            unsigned long long countFromLeft = 0;
+            long long newSize;
+
+            if (force)
+            {
+                newSize = manual;
+
+                unsigned char* newNumber = new unsigned char[newSize]();
+
+                for (size_t i = 0; i < newSize; i++)
+                {
+                    newNumber[i] = this->number[i];
+                }
+                this->SIZE = newSize;
+                delete this->number;
+                this->number = newNumber;
+            }
+
+            for (long long i = (this->SIZE)-1; i >= 0; i--)
+            {
+                if (this->number[i] == 0)
+                {
+                    countFromLeft++;
+                }
+            }
+
+            if (countFromLeft != 0)
+            {
+                if (manual != 0)
+                {
+                    if (this->SIZE - countFromLeft > manual)
+                    {
+                        newSize = this->SIZE - countFromLeft;
+                    }
+                    else
+                    {
+                        newSize = manual;
+                    }
+                }
+                else
+                {
+                    newSize = this->SIZE - countFromLeft;
+                }
+
+                unsigned char* newNumber = new unsigned char[newSize]();
+
+                for (size_t i = 0; i < newSize; i++)
+                {
+                    newNumber[i] = this->number[i];
+                }
+                this->SIZE = newSize;
+                delete[] this->number;
+                this->number = newNumber;
+            }
+        }
+
+        // Auto trim 0 from the front of the number, used to reduce the allocation size of the object, Manual argument - Trim to be no smaller than this argument, force argument - force manual
+        __device__ void deviceAutoTrim(long long manual = 0, bool force = false) {
+
+            unsigned long long countFromLeft = 0;
+            long long newSize;
+
+            if (force)
+            {
+                newSize = manual;
+
+                unsigned char* newNumber = new unsigned char[newSize]();
+
+                for (size_t i = 0; i < newSize; i++)
+                {
+                    newNumber[i] = this->number[i];
+                }
+                this->SIZE = newSize;
+                delete this->number;
+                this->number = newNumber;
+            }
+
+            for (long long i = (this->SIZE) - 1; i >= 0; i--)
+            {
+                if (this->number[i] == 0)
+                {
+                    countFromLeft++;
+                }
+            }
+
+            if (countFromLeft != 0)
+            {
+                if (manual != 0)
+                {
+                    if (this->SIZE - countFromLeft > manual)
+                    {
+                        newSize = this->SIZE - countFromLeft;
+                    }
+                    else
+                    {
+                        newSize = manual;
+                    }
+                }
+                else
+                {
+                    newSize = this->SIZE - countFromLeft;
+                }
+
+                unsigned char* newNumber = new unsigned char[newSize]();
+
+                for (size_t i = 0; i < newSize; i++)
+                {
+                    newNumber[i] = this->number[i];
+                }
+                this->SIZE = newSize;
+                delete[] this->number;
+                this->number = newNumber;
+            }
         }
 
         static bigInt add(bigInt a, bigInt b) {
 
             const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
-
-            if (a.SIZE < b.SIZE)
-            {
-                a.extendMAX_SIZE(b.SIZE);
-            }
-            else if (b.SIZE < a.SIZE)
-            {
-                b.extendMAX_SIZE(a.SIZE);
-            }
+            const int MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
 
             bigInt toReturn = bigIntConstructor(MAX_SIZE);
             unsigned char toAddNext = 0;
 
-            do
+            for (size_t i = 0; i < MIN_SIZE; i++)
             {
-                for (size_t i = 0; i < MAX_SIZE; i++)
+                if (a.number[i] + b.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
                 {
-                    if (a.number[i] + b.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
+                    toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                    toAddNext = 1;
+                }
+                else
+                {
+                    toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                    toAddNext = 0;
+                }
+            }
+            toReturn.number[MIN_SIZE] = toAddNext;
+
+            toAddNext = 0;
+            if (MIN_SIZE != MAX_SIZE && a.SIZE > b.SIZE)
+            {
+                for (size_t i = MIN_SIZE; i < MAX_SIZE; i++)
+                {
+                    if (a.number[i] + toReturn.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
                     {
-                        toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                        toReturn.number[i] = a.number[i] + toReturn.number[i] + toAddNext;
                         toAddNext = 1;
                     }
                     else
                     {
-                        toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                        toReturn.number[i] = a.number[i] + toReturn.number[i] + toAddNext;
                         toAddNext = 0;
                     }
                 }
+            }
+            else if (MIN_SIZE != MAX_SIZE && a.SIZE < b.SIZE)
+            {
+                for (size_t i = MIN_SIZE; i < MAX_SIZE; i++)
+                {
+                    if (b.number[i] + toReturn.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
+                    {
+                        toReturn.number[i] = b.number[i] + toReturn.number[i] + toAddNext;
+                        toAddNext = 1;
+                    }
+                    else
+                    {
+                        toReturn.number[i] = b.number[i] + toReturn.number[i] + toAddNext;
+                        toAddNext = 0;
+                    }
+                }
+            }
 
-            } while (toAddNext);
+            if (toAddNext != 0)
+            {
+                toReturn.extendMAX_SIZE(MAX_SIZE + 1);
+            }
+            toReturn.number[MAX_SIZE] = toAddNext;
 
             return toReturn;
         }
@@ -193,36 +353,65 @@ namespace myNumLib
         __device__ static bigInt deviceAdd(bigInt a, bigInt b) {
 
             const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
-
-            if (a.SIZE < b.SIZE)
-            {
-                a.deviceExtendMAX_SIZE(b.SIZE);
-            }
-            else if (b.SIZE < a.SIZE)
-            {
-                b.deviceExtendMAX_SIZE(a.SIZE);
-            }
+            const int MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
 
             bigInt toReturn = deviceBigIntConstructor(MAX_SIZE);
             unsigned char toAddNext = 0;
 
-            do
+            for (size_t i = 0; i < MIN_SIZE; i++)
             {
-                for (size_t i = 0; i < MAX_SIZE; i++)
+                if (a.number[i] + b.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
                 {
-                    if (a.number[i] + b.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
+                    toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                    toAddNext = 1;
+                }
+                else
+                {
+                    toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                    toAddNext = 0;
+                }
+            }
+            toReturn.number[MIN_SIZE] = toAddNext;
+
+            toAddNext = 0;
+            if (MIN_SIZE != MAX_SIZE && a.SIZE > b.SIZE)
+            {
+                for (size_t i = MIN_SIZE; i < MAX_SIZE; i++)
+                {
+                    if (a.number[i] + toReturn.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
                     {
-                        toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                        toReturn.number[i] = a.number[i] + toReturn.number[i] + toAddNext;
                         toAddNext = 1;
                     }
                     else
                     {
-                        toReturn.number[i] = a.number[i] + b.number[i] + toAddNext;
+                        toReturn.number[i] = a.number[i] + toReturn.number[i] + toAddNext;
                         toAddNext = 0;
                     }
                 }
+            }
+            else if (MIN_SIZE != MAX_SIZE && a.SIZE < b.SIZE)
+            {
+                for (size_t i = MIN_SIZE; i < MAX_SIZE; i++)
+                {
+                    if (b.number[i] + toReturn.number[i] + toAddNext > UNSIGNED_CHAR_MAX)
+                    {
+                        toReturn.number[i] = b.number[i] + toReturn.number[i] + toAddNext;
+                        toAddNext = 1;
+                    }
+                    else
+                    {
+                        toReturn.number[i] = b.number[i] + toReturn.number[i] + toAddNext;
+                        toAddNext = 0;
+                    }
+                }
+            }
 
-            } while (toAddNext);
+            if (toAddNext != 0)
+            {
+                toReturn.deviceExtendMAX_SIZE(MAX_SIZE + 1);
+            }
+            toReturn.number[MAX_SIZE] = toAddNext;
 
             return toReturn;
         }
@@ -287,6 +476,12 @@ namespace myNumLib
             */
             return result;
         }
+
+
+    private:
+
+
+
     };
 
     class precisionNumber
