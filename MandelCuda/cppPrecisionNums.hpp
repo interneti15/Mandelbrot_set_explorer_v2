@@ -138,6 +138,42 @@ namespace myNumLib
             return false;
         }
 
+        // Check if value of two bigInt are equal, ignores size if them, ignoreSign argument is used to ignore sign
+        static bool valueEqual(const bigInt& a, const bigInt& b, const bool ignoreSign = false) {
+
+            if ((a.sign != b.sign) && !ignoreSign)
+            {
+                return false;
+            }
+
+            const unsigned long long MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
+            const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
+
+
+
+            for (size_t i = 0; i < MIN_SIZE; i++)
+            {
+                if (a.number[i] != b.number[i])
+                {
+                    return false;
+                }
+            }
+
+            if (MAX_SIZE != MIN_SIZE)
+            {
+                const bigInt* biggerOnePtr = a.SIZE > b.SIZE ? &a : &b;
+
+                for (size_t i = MIN_SIZE; i < MAX_SIZE; i++)
+                {
+                    if (biggerOnePtr->number[i] != 0)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         // Extend the lenght of the array storing the data to accomodate higher numbers
         void extendMAX_SIZE(const int desiredSize) {
             
@@ -508,6 +544,7 @@ namespace myNumLib
             const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
 
 
+
             // Check if a is greater than or equal to b
             if (isFirstBiggerThenSecond(a, b) || true) {
                 // Initialize the difference
@@ -521,25 +558,11 @@ namespace myNumLib
                     borrow = (current / (UNSIGNED_CHAR_MAX + 1)) > 0;
                 }
                 diff.sign = a.sign; // Positive result
-                diff.autoTrim(MAX_SIZE);
+                //diff.autoTrim(MAX_SIZE);
 
                 return diff;
 
             }
-            else {
-                // Change the signs of a and b
-                bigInt tempA = a;
-                tempA.sign = !tempA.sign;
-                bigInt tempB = b;
-                tempB.sign = !tempB.sign;
-
-                // Perform addition to get the negative difference
-                bigInt diff = add(tempA, tempB);
-                diff.sign = false;
-
-                return diff;
-            }
-
             
         }
 
