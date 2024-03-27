@@ -36,19 +36,20 @@ void end(globals& Global, const int& code, threadsHandling& Threads, thread* SC)
 void cpTest() {
 	constexpr int size = 10;
 
-	myNumLib::bigInt A = myNumLib::bigInt::bigIntConstructor(10);
-	myNumLib::bigInt B = myNumLib::bigInt::bigIntConstructor(1);
+	myNumLib::bigInt A = myNumLib::bigInt::bigIntConstructor(2);
+	myNumLib::bigInt B = myNumLib::bigInt::bigIntConstructor(2);
 
-	A.number[1] = 255;
-	A.number[0] = 255;
+	A.number[0] = 1;
+	A.sign = false;
 
 	//B.number[1] = 0;
-	B.number[0] = 1;
+	B.number[0] = 3;
+	//B.sign = false;
 
 	printf("starting math...\n");
-	myNumLib::bigInt C = myNumLib::bigInt::add(A, B);
+	myNumLib::bigInt C = myNumLib::bigInt::add(B, A);
 	//C.deviceAutoTrim();
-
+	printf("C sign: %d\n", C.sign);
 	for (int i = C.SIZE - 1; i >= 0; i--) {
 		printf("%d ,", C.number[i]);
 	}
@@ -87,9 +88,9 @@ int main()
 	globals Global;
 	Global.clean();
 
-	//cpTest();
+	cpTest();
 
-	test << <1, 1 >> > ();
+	//test << <1, 1 >> > ();
 
 	return 0;
 	

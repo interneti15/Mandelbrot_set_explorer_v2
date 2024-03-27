@@ -286,10 +286,29 @@ namespace myNumLib
 
         static bigInt add(bigInt a, bigInt b) {
 
-            const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
-            const int MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
+            const unsigned long long MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
+            const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
 
             bigInt toReturn = bigIntConstructor(MAX_SIZE);
+
+            if (a.sign && b.sign) {
+                toReturn.sign = true; // Positive
+            }
+            else if (!a.sign && !b.sign) {
+                toReturn.sign = false; // Negative
+            }
+            else {
+                // One is positive, one is negative, perform subtraction
+                if (a.sign) {
+                    b.sign = true; // Change the sign of b to positive
+                    return subtract(a, b);
+                }
+                else {
+                    a.sign = true; // Change the sign of a to positive
+                    return subtract(b, a);
+                }
+            }
+
             unsigned char toAddNext = 0;
 
             for (size_t i = 0; i < MIN_SIZE; i++)
@@ -480,7 +499,49 @@ namespace myNumLib
 
     private:
 
+        // Performs subtraction of two big integers, a and b, with checking for overflow
+        static bigInt subtract(const bigInt& a, const bigInt& b) {
 
+            printf("substract\n");
+
+            const unsigned long long MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
+            const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
+
+
+            // Check if a is greater than or equal to b
+            if (isFirstBiggerThenSecond(a, b) || true) {
+                // Initialize the difference
+                bigInt diff = bigIntConstructor(MAX_SIZE);
+
+                // Perform subtraction using long subtraction algorithm
+                bool borrow = false;
+                for (int i = 0; i < a.SIZE; ++i) {
+                    unsigned long long current = static_cast<unsigned long long>(a.number[i]) - (borrow ? 1 : 0) - static_cast<unsigned long long>(b.number[i] & UNSIGNED_CHAR_MAX);
+                    diff.number[i] = static_cast<unsigned char>(current % (UNSIGNED_CHAR_MAX + 1));
+                    borrow = (current / (UNSIGNED_CHAR_MAX + 1)) > 0;
+                }
+                diff.sign = a.sign; // Positive result
+                diff.autoTrim(MAX_SIZE);
+
+                return diff;
+
+            }
+            else {
+                // Change the signs of a and b
+                bigInt tempA = a;
+                tempA.sign = !tempA.sign;
+                bigInt tempB = b;
+                tempB.sign = !tempB.sign;
+
+                // Perform addition to get the negative difference
+                bigInt diff = add(tempA, tempB);
+                diff.sign = false;
+
+                return diff;
+            }
+
+            
+        }
 
     };
 
