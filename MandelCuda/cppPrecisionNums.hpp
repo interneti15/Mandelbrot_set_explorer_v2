@@ -15,7 +15,7 @@ namespace myNumLib
         bool sign = true;// true = positive number, false = negative number
 
         // Constructor
-        static bigInt bigIntConstructor(const int MAX_SIZE = 50, bool SIGN = true) {
+        static bigInt bigIntConstructor(const size_t MAX_SIZE = 50, bool SIGN = true) {
             bigInt toReturn;
 
             toReturn.number = new unsigned char[MAX_SIZE]();
@@ -26,7 +26,7 @@ namespace myNumLib
         }
 
         // Constructor, when called on kernel thread
-        __device__ static bigInt deviceBigIntConstructor(const int MAX_SIZE = 50, bool SIGN = true) {
+        __device__ static bigInt deviceBigIntConstructor(const size_t MAX_SIZE = 50, bool SIGN = true) {
             bigInt toReturn;
 
             toReturn.number = new unsigned char[MAX_SIZE]();
@@ -36,9 +36,9 @@ namespace myNumLib
             return toReturn;
         }
 
-        static bool isFirstBiggerThenSecond(const bigInt a, const bigInt b) {
+        static bool isFirstBiggerThenSecond(const bigInt& a, const bigInt& b, bool ignoreSign = false) {
 
-            if (a.sign && !b.sign) // if a is positive and b is negative
+            if (a.sign && !b.sign && !ignoreSign) // if a is positive and b is negative
             {
                 return true;
             }
@@ -87,9 +87,9 @@ namespace myNumLib
             return false;
         }
 
-        __device__ static bool deviceisFirstBiggerThenSecond(const bigInt a, const bigInt b) {
+        __device__ static bool deviceIsFirstBiggerThenSecond(const bigInt& a, const bigInt& b, bool ignoreSign = false) {
 
-            if (a.sign && !b.sign) // if a is positive and b is negative
+            if (a.sign && !b.sign && ignoreSign) // if a is positive and b is negative
             {
                 return true;
             }
@@ -174,8 +174,43 @@ namespace myNumLib
             return true;
         }
 
+        __device__ static bool deviceValueEqual(const bigInt& a, const bigInt& b, const bool ignoreSign = false) {
+
+            if ((a.sign != b.sign) && !ignoreSign)
+            {
+                return false;
+            }
+
+            const unsigned long long MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
+            const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
+
+
+
+            for (size_t i = 0; i < MIN_SIZE; i++)
+            {
+                if (a.number[i] != b.number[i])
+                {
+                    return false;
+                }
+            }
+
+            if (MAX_SIZE != MIN_SIZE)
+            {
+                const bigInt* biggerOnePtr = a.SIZE > b.SIZE ? &a : &b;
+
+                for (size_t i = MIN_SIZE; i < MAX_SIZE; i++)
+                {
+                    if (biggerOnePtr->number[i] != 0)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         // Extend the lenght of the array storing the data to accomodate higher numbers
-        void extendMAX_SIZE(const int desiredSize) {
+        void extendMAX_SIZE(const size_t desiredSize) {
             
             unsigned char* newNumber = new unsigned char[desiredSize]();
 
@@ -189,7 +224,7 @@ namespace myNumLib
         }
 
         // Extend the lenght of the array storing the data to accomodate higher numbers
-        __device__ void deviceExtendMAX_SIZE(const int desiredSize) {
+        __device__ void deviceExtendMAX_SIZE(const size_t desiredSize) {
 
             unsigned char* newNumber = new unsigned char[desiredSize]();
 
@@ -320,7 +355,7 @@ namespace myNumLib
             }
         }
 
-        static bigInt add(bigInt a, bigInt b) {
+        static bigInt add(const bigInt& a, const bigInt& b) {
 
             const unsigned long long MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
             const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
@@ -336,11 +371,11 @@ namespace myNumLib
             else {
                 // One is positive, one is negative, perform subtraction
                 if (a.sign) {
-                    b.sign = true; // Change the sign of b to positive
+                    //b.sign = true; // Change the sign of b to positive
                     return subtract(a, b);
                 }
                 else {
-                    a.sign = true; // Change the sign of a to positive
+                    //a.sign = true; // Change the sign of a to positive
                     return subtract(b, a);
                 }
             }
@@ -407,10 +442,29 @@ namespace myNumLib
 
         __device__ static bigInt deviceAdd(bigInt a, bigInt b) {
 
-            const int MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
-            const int MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
+            const unsigned long long MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
+            const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
 
             bigInt toReturn = deviceBigIntConstructor(MAX_SIZE);
+
+            if (a.sign && b.sign) {
+                toReturn.sign = true; // Positive
+            }
+            else if (!a.sign && !b.sign) {
+                toReturn.sign = false; // Negative
+            }
+            else {
+                // One is positive, one is negative, perform subtraction
+                if (a.sign) {
+                    //b.sign = true; // Change the sign of b to positive
+                    return deviceSubtract(a, b);
+                }
+                else {
+                    //a.sign = true; // Change the sign of a to positive
+                    return deviceSubtract(b, a);
+                }
+            }
+
             unsigned char toAddNext = 0;
 
             for (size_t i = 0; i < MIN_SIZE; i++)
@@ -535,35 +589,100 @@ namespace myNumLib
 
     private:
 
-        // Performs subtraction of two big integers, a and b, with checking for overflow
-        static bigInt subtract(const bigInt& a, const bigInt& b) {
+        // subtraction of two bigInt a,b, only to be used from add method, or like when a,b have opposite signs
+        static bigInt subtract(const bigInt& a, const bigInt& b, const bool inRecursive = false) {
 
-            printf("substract\n");
-
-            const unsigned long long MAX_SIZE = a.SIZE > b.SIZE ? a.SIZE : b.SIZE;
             const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
+            auto toReturn = bigInt::bigIntConstructor(a.SIZE > b.SIZE ? a.SIZE : b.SIZE);
 
-
-
-            // Check if a is greater than or equal to b
-            if (isFirstBiggerThenSecond(a, b) || true) {
-                // Initialize the difference
-                bigInt diff = bigIntConstructor(MAX_SIZE);
-
-                // Perform subtraction using long subtraction algorithm
-                bool borrow = false;
-                for (int i = 0; i < a.SIZE; ++i) {
-                    unsigned long long current = static_cast<unsigned long long>(a.number[i]) - (borrow ? 1 : 0) - static_cast<unsigned long long>(b.number[i] & UNSIGNED_CHAR_MAX);
-                    diff.number[i] = static_cast<unsigned char>(current % (UNSIGNED_CHAR_MAX + 1));
-                    borrow = (current / (UNSIGNED_CHAR_MAX + 1)) > 0;
+            if (!inRecursive) // We dont have to check those again
+            {
+                if (valueEqual(a, b, true))
+                {
+                    return toReturn; // Return zero
                 }
-                diff.sign = a.sign; // Positive result
-                //diff.autoTrim(MAX_SIZE);
 
-                return diff;
+                if (isFirstBiggerThenSecond(b, a, true))
+                {
+                    toReturn = subtract(b, a, true);
+                    toReturn.sign = false;
+                    return toReturn;
+                }
+            }
 
+            // Subtraction alghoritm
+            toReturn.number = a.number;
+            for (size_t i = 0; i < MIN_SIZE; i++)
+            {               
+                if (toReturn.number[i] < b.number[i])
+                {
+                    for (size_t j = 1; j < MIN_SIZE; j++)
+                    {
+                        if (toReturn.number[i + j] > 0)
+                        {
+                            toReturn.number[i + j]--;
+                            break;
+                        }
+                        toReturn.number[i + j] = UNSIGNED_CHAR_MAX;
+                    }
+                    toReturn.number[i] = UNSIGNED_CHAR_MAX - b.number[i] + toReturn.number[i] + 1;
+                }
+                else
+                {
+                    toReturn.number[i] = toReturn.number[i] - b.number[i];
+                }
+            }
+
+            return toReturn;
+        }
+
+        // subtraction of two bigInt a,b, only to be used from add method, or like when a,b have opposite signs
+        static bigInt deviceSubtract(const bigInt& a, const bigInt& b, const bool inRecursive = false) {
+
+            const unsigned long long MIN_SIZE = a.SIZE < b.SIZE ? a.SIZE : b.SIZE;
+            auto toReturn = bigInt::deviceBigIntConstructor(a.SIZE > b.SIZE ? a.SIZE : b.SIZE);
+
+            if (!inRecursive)// We dont have to check those again
+            {
+                if (deviceValueEqual(a, b, true))
+                {
+                    return toReturn;
+                }
+
+                if (deviceIsFirstBiggerThenSecond(b, a, true))
+                {
+                    toReturn = deviceSubtract(b, a, true);
+                    toReturn.sign = false;
+                    return toReturn;
+                }
             }
             
+            toReturn.number = a.number;
+
+            // Subtraction alghoritm
+            for (size_t i = 0; i < MIN_SIZE; i++)
+            {
+                if (toReturn.number[i] < b.number[i])
+                {
+                    for (size_t j = 1; j < MIN_SIZE; j++)
+                    {
+                        if (toReturn.number[i + j] > 0)
+                        {
+                            toReturn.number[i + j]--;
+                            break;
+                        }
+                        toReturn.number[i + j] = UNSIGNED_CHAR_MAX;
+                    }
+
+                    toReturn.number[i] = UNSIGNED_CHAR_MAX - b.number[i] + toReturn.number[i] + 1;
+                }
+                else
+                {
+                    toReturn.number[i] = toReturn.number[i] - b.number[i];
+                }
+            }
+
+            return toReturn;
         }
 
     };
